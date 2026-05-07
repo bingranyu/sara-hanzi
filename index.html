@@ -102,14 +102,62 @@
     <script>
         // 設定題目：國字與對應的部件
         const quizData = [
-            { word: "築", parts: ["竹", "木", "凡", "凡"] },
-            { word: "惱", parts: ["忄", "腦"] },
-            { word: "魔", parts: ["麻", "鬼"] },
-            { word: "舒", parts: ["舍", "予"] },
-            { word: "瓣", parts: ["辛", "瓜", "辛"] },
-            { word: "匠", parts: ["匚", "斤"] },
             { word: "桐", parts: ["木", "同"] },
-            { word: "爬", parts: ["爪", "巴"] }
+            { word: "爬", parts: ["爪", "巴"] },
+            { word: "桐", parts: ["木", "同"] },
+            { word: "初", parts: ["衣", "刀"] },
+            { word: "夏", parts: ["一","自", "夊"] },
+            { word: "腰", parts: ["肉", "西", "女"] },
+            { word: "取", parts: ["耳", "又"] },
+            { word: "抬", parts: ["手", "台"] },
+            { word: "梢", parts: ["木", "肖"] },
+            { word: "禮", parts: ["示", "曲", "豆"] },
+            { word: "肩", parts: ["戶", "肉"] },
+            { word: "掌", parts: ["尚", "手"] },
+            { word: "瓣", parts: ["辛", "瓜", "辛"] },
+            { word: "鋪", parts: ["金", "甫"] },
+            { word: "童", parts: ["立", "里"] },
+            { word: "染", parts: ["水", "九", "木"] },
+            { word: "覆", parts: ["西", "復"] },
+            { word: "椏", parts: ["木", "亞"] },
+            { word: "簇", parts: ["竹", "族"] },
+            { word: "蕊", parts: ["艸", "惢"] },
+            { word: "野", parts: ["里", "予"] },
+            { word: "柳", parts: ["木", "卯"] },
+            { word: "質", parts: ["斤", "斤", "貝"] },
+            { word: "岬", parts: ["山", "甲"] },
+            { word: "趴", parts: ["足", "八"] },
+            { word: "仙", parts: ["人", "山"] },
+            { word: "列", parts: ["歹", "刀"] },
+            { word: "潤", parts: ["水", "門", "王"] },
+            { word: "岩", parts: ["山", "石"] },
+            { word: "菇", parts: ["艸", "女", "古"] },
+            { word: "豆", parts: ["豆"] },
+            { word: "雕", parts: ["周", "隹"] },
+            { word: "塑", parts: ["朔", "土"] },
+            { word: "鬼", parts: ["’", "田", "ㄦ", "ㄙ"] },
+            { word: "龜", parts: ["龜"] },
+            { word: "燭", parts: ["火", "蜀"] },
+            { word: "濺", parts: ["水", "貝", "戈", "戈"] },
+            { word: "腐", parts: ["府", "肉"] },
+            { word: "灣", parts: ["水", "彎"] },
+            { word: "冰", parts: ["水", "水"] },
+            { word: "爬", parts: ["爪", "巴"] },
+            { word: "陸", parts: ["阜", "土", "ㄦ", "土"] },
+            { word: "肺", parts: ["肉", "市"] },
+            { word: "膚", parts: ["虍", "胃"] },
+            { word: "黏", parts: ["黍", "占"] },
+            { word: "液", parts: ["水", "夜"] },
+            { word: "保", parts: ["人", "呆"] },
+            { word: "持", parts: ["手", "寺"] },
+            { word: "敵", parts: ["立", "ㄇ", "古", "攴"] },
+            { word: "縫", parts: ["糸", "逢"] },
+            { word: "伐", parts: ["人", "戈"] },
+            { word: "球", parts: ["玉", "求"] },
+            { word: "椒", parts: ["木", "叔"] },
+            { word: "鰓", parts: ["魚", "思"] },
+            { word: "隙", parts: ["阜", "小", "日", "小"] },
+            { word: "卵", parts: ["卵"] }
         ];
 
         let currentIdx = 0;
@@ -128,10 +176,28 @@
             optionsDiv.innerHTML = "";
             
             // 混合所有部件作為選項
-            let allOptions = [...data.parts, "手", "口", "日", "水", "心"];
-            allOptions = allOptions.sort(() => Math.random() - 0.5);
+            let allOptions = [
+			"木", "同", "衣", "刀", "頁", "夊", "肉", "要", "耳", "又", 
+			"手", "台", "肖", "示", "豐", "戶", "尚", "辛", "瓜", "金", 
+			"甫", "立", "里", "水", "九", "西", "復", "竹", "族", "艸", 
+			"惢", "予", "卯", "斤", "貝", "山", "甲", "足", "八", "人", 
+			"歹", "門", "王", "石", "姑", "豆", "周", "隹", "朔", "土", 
+			"鬼", "龜", "火", "蜀", "貝", "府", "弓", "爪", "巴", "阜", 
+			"坴", "市", "虍", "胃", "黍", "占", "夜", "呆", "寺", "舌", 
+			"支", "攴", "糸", "逢", "戈", "玉", "求", "叔", "魚", "思", 
+			"小", "日", "卵","言",
+			"手", "口", "日", "水", "心" // 指定加入的混合選項
+			];
+			
+			// 總button數 = 12
+			let tot_buttons = 12;
+			// 隨機抽取干擾數
+			let random_options = allOptions.filter(x=>!data.parts.includes(x)).sort(() => Math.random() - 0.5).slice(0,tot_buttons-data.parts.length);
+			
+			let show_options = [...random_options, ...data.parts].sort(() => Math.random() - 0.5);
+			
 
-            allOptions.forEach(p => {
+            show_options.forEach(p => {
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
                 btn.innerText = p;
