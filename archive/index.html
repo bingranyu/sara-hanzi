@@ -3,114 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <title>森林拆字守護者</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root {
-            --forest-green: #2e7d32;
-            --light-forest: #e8f5e9;
-        }
-
         body {
-            background-color: var(--light-forest);
-            font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
-            color: #333;
-            min-height: 100vh;
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #e8f5e9;
+            color: #2e7d32;
             display: flex;
+            flex-direction: column;
             align-items: center;
+            padding: 20px;
         }
-
-        .game-card {
-            border: none;
+        h1 { color: #1b5e20; }
+        .instruction { margin-bottom: 20px; font-size: 1.2rem; }
+        
+        /* 遊戲區域 */
+        #game-container {
+            background: white;
+            padding: 30px;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            max-width: 600px;
+            text-align: center;
         }
 
-        .word-display-box {
-            font-size: clamp(3rem, 15vw, 5rem); /* 響應式字體大小 */
-            min-height: 140px;
+        /* 題目顯示區 */
+        .word-display {
+            font-size: 80px;
+            margin: 20px;
+            padding: 20px;
             border: 4px dashed #a5d6a7;
             border-radius: 15px;
+            min-height: 120px;
+        }
+
+        /* 選項區 */
+        .options-container {
             display: flex;
-            align-items: center;
+            flex-wrap: wrap;
             justify-content: center;
-            color: var(--forest-green);
-            background-color: #f9fdf9;
+            gap: 15px;
+            margin-top: 30px;
         }
 
         .option-btn {
-            font-size: 1.8rem;
-            width: 70px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #a5d6a7;
-            background: white;
+            font-size: 30px;
+            padding: 15px 25px;
+            background-color: #ffffff;
+            border: 2px solid #81c784;
+            border-radius: 10px;
+            cursor: pointer;
             transition: all 0.2s;
-            border-radius: 12px;
-            color: #2e7d32;
         }
 
         .option-btn:hover {
             background-color: #f1f8e9;
-            transform: translateY(-3px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: scale(1.05);
         }
 
-        .option-btn.correct {
-            background-color: var(--forest-green) !important;
-            border-color: var(--forest-green) !important;
-            color: white !important;
-        }
-
+        .correct { background-color: #81c784 !important; color: white; }
+        
         #message {
-            height: 32px;
+            margin-top: 20px;
+            font-size: 24px;
+            height: 30px;
             font-weight: bold;
         }
 
-        .progress {
-            height: 10px;
-            border-radius: 10px;
+        button#next-btn {
+            margin-top: 20px;
+            padding: 10px 30px;
+            font-size: 20px;
+            background-color: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
         }
     </style>
 </head>
 <body>
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-10 col-lg-7 text-center">
-            
-            <h1 class="fw-bold mb-2" style="color: var(--forest-green);">森林拆字守護者 🌳</h1>
-            <p class="text-muted mb-4">點擊正確的部件，幫「字寶寶」找回它的零件吧！</p>
 
-            <div class="card game-card p-3 p-md-5">
-                <div class="progress mb-3">
-                    <div id="game-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
-                </div>
+    <h1>森林拆字守護者 🌳</h1>
+    <p class="instruction">點擊下方正確的部件，幫「字寶寶」找回它的零件吧！</p>
 
-                <div class="mb-2 text-secondary fw-bold">
-                    目標國字：<span id="current-full-word" class="fs-4 text-dark">?</span>
-                </div>
-
-                <div class="word-display-box mb-4 shadow-sm" id="display-area">?</div>
-                
-                <div id="message" class="mb-3 text-success"></div>
-
-                <div class="d-flex flex-wrap justify-content-center gap-3 mb-4" id="options">
-                    </div>
-
-                <div class="d-grid gap-2 col-8 col-md-6 mx-auto">
-                    <button id="next-btn" class="btn btn-success btn-lg shadow" onclick="nextLevel()" style="display: none;">
-                        下一個關卡 ✨
-                    </button>
-                </div>
-            </div>
-
-            <p class="mt-4 text-secondary small">練習進度：<span id="progress-text">0/0</span></p>
+    <div id="game-container">
+        <div id="target-word" style="font-size: 24px; color: #666;">目標國字：<span id="current-full-word">?</span></div>
+        <div class="word-display" id="display-area">?</div>
+        
+        <div class="options-container" id="options">
+            <!-- 按鈕會由 JS 產生 -->
         </div>
-    </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <div id="message"></div>
+        <button id="next-btn" onclick="nextLevel()">下一個關卡</button>
+    </div>
 
     <script>
         // 設定題目：國字與對應的部件
