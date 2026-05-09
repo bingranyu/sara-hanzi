@@ -74,6 +74,41 @@
             height: 10px;
             border-radius: 10px;
         }
+		
+		ruby {
+			align-items: center;
+			display: inline-flex;
+			font-family: "Times New Roman", Times, "標楷體", "BiauKai", "DFKai-sb", "TWKai", "Microsoft JhengHei", sans-serif;
+			line-height: 1;
+			min-height: 1em;
+		}
+
+		ruby rt {
+			display: block;
+			font-family: "Bopomofo", "標楷體", "BiauKai", "DFKai-sb", "TWKai", "Microsoft JhengHei";
+			font-size: 30%;
+			font-weight: 500;
+			line-height: 1;
+			text-align: center;
+			padding-left: 0.1em;
+			position: relative;
+			-webkit-text-orientation: upright;
+			text-orientation: upright;
+			writing-mode: vertical-lr;
+			white-space: nowrap;
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+			width: 1.5em;
+		}
+		
+		ruby span {
+			border: 1px solid;
+		}
+		
+		@font-face {
+			font-family: "Bopomofo";
+			src: url("font/bopomofo.woff2") format("woff2"), url("font/bopomofo.woff") format("woff");
+		}
     </style>
 </head>
 <body>
@@ -89,8 +124,8 @@
                     <div id="game-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
                 </div>
 
-                <div class="mb-2 text-secondary fw-bold">
-                    目標國字：<span id="current-full-word" class="fs-4 text-dark">?</span>
+                <div class="mb-2 text-secondary fw-bold"  style="font-size: 3rem;">
+                    目標國字：<span id="current-full-word" class="text-dark">?</span>
                 </div>
 
                 <div class="word-display-box mb-4 shadow-sm" id="display-area">?</div>
@@ -116,71 +151,16 @@
 
     <script>
         // 設定題目：國字與對應的部件
-        const quizData = [
-            { word: "桐", parts: ["木", "同"] },
-            { word: "爬", parts: ["爪", "巴"] },
-            { word: "桐", parts: ["木", "同"] },
-            { word: "初", parts: ["衣", "刀"] },
-            { word: "夏", parts: ["一","自", "夊"] },
-            { word: "腰", parts: ["肉", "西", "女"] },
-            { word: "取", parts: ["耳", "又"] },
-            { word: "抬", parts: ["手", "台"] },
-            { word: "梢", parts: ["木", "肖"] },
-            { word: "禮", parts: ["示", "曲", "豆"] },
-            { word: "肩", parts: ["戶", "肉"] },
-            { word: "掌", parts: ["尚", "手"] },
-            { word: "瓣", parts: ["辛", "瓜", "辛"] },
-            { word: "鋪", parts: ["金", "甫"] },
-            { word: "童", parts: ["立", "里"] },
-            { word: "染", parts: ["水", "九", "木"] },
-            { word: "覆", parts: ["西", "復"] },
-            { word: "椏", parts: ["木", "亞"] },
-            { word: "簇", parts: ["竹", "族"] },
-            { word: "蕊", parts: ["艸", "惢"] },
-            { word: "野", parts: ["里", "予"] },
-            { word: "柳", parts: ["木", "卯"] },
-            { word: "質", parts: ["斤", "斤", "貝"] },
-            { word: "岬", parts: ["山", "甲"] },
-            { word: "趴", parts: ["足", "八"] },
-            { word: "仙", parts: ["人", "山"] },
-            { word: "列", parts: ["歹", "刀"] },
-            { word: "潤", parts: ["水", "門", "王"] },
-            { word: "岩", parts: ["山", "石"] },
-            { word: "菇", parts: ["艸", "女", "古"] },
-            { word: "豆", parts: ["豆"] },
-            { word: "雕", parts: ["周", "隹"] },
-            { word: "塑", parts: ["朔", "土"] },
-            { word: "鬼", parts: ["’", "田", "ㄦ", "ㄙ"] },
-            { word: "龜", parts: ["龜"] },
-            { word: "燭", parts: ["火", "蜀"] },
-            { word: "濺", parts: ["水", "貝", "戈", "戈"] },
-            { word: "腐", parts: ["府", "肉"] },
-            { word: "灣", parts: ["水", "彎"] },
-            { word: "冰", parts: ["水", "水"] },
-            { word: "爬", parts: ["爪", "巴"] },
-            { word: "陸", parts: ["阜", "土", "ㄦ", "土"] },
-            { word: "肺", parts: ["肉", "市"] },
-            { word: "膚", parts: ["虍", "胃"] },
-            { word: "黏", parts: ["黍", "占"] },
-            { word: "液", parts: ["水", "夜"] },
-            { word: "保", parts: ["人", "呆"] },
-            { word: "持", parts: ["手", "寺"] },
-            { word: "敵", parts: ["立", "ㄇ", "古", "攴"] },
-            { word: "縫", parts: ["糸", "逢"] },
-            { word: "伐", parts: ["人", "戈"] },
-            { word: "球", parts: ["玉", "求"] },
-            { word: "椒", parts: ["木", "叔"] },
-            { word: "鰓", parts: ["魚", "思"] },
-            { word: "隙", parts: ["阜", "小", "日", "小"] },
-            { word: "卵", parts: ["卵"] }
-        ];
+        const quizData = [{"word":"桐","parts":["木","同"],"vocab":[{"text":"油","bopomo":"ㄧㄡˊ"},{"text":"桐","bopomo":"ㄊㄨㄥˊ"}]},{"word":"爬","parts":["爪","巴"],"vocab":[{"text":"爬","bopomo":"ㄆㄚˊ"},{"text":"樹","bopomo":"ㄕㄨˋ"}]},{"word":"初","parts":["衣","刀"],"vocab":[{"text":"初","bopomo":"ㄔㄨ"},{"text":"夏","bopomo":"ㄒㄧㄚˋ"}]},{"word":"夏","parts":["一","自","夊"],"vocab":[{"text":"夏","bopomo":"ㄒㄧㄚˋ"},{"text":"令","bopomo":"ㄌㄧㄥˋ"},{"text":"營","bopomo":"ㄧㄥˊ"}]},{"word":"腰","parts":["肉","西","女"],"vocab":[{"text":"山","bopomo":"ㄕㄢ"},{"text":"腰","bopomo":"ㄧㄠ"}]},{"word":"取","parts":["耳","又"],"vocab":[{"text":"取","bopomo":"ㄑㄩˇ"},{"text":"名","bopomo":"ㄇㄧㄥˊ"}]},{"word":"抬","parts":["手","台"],"vocab":[{"text":"抬","bopomo":"ㄊㄞˊ"},{"text":"頭","bopomo":"ㄊㄡˊ"}]},{"word":"梢","parts":["木","肖"],"vocab":[{"text":"樹","bopomo":"ㄕㄨˋ"},{"text":"梢","bopomo":"ㄕㄠ"}]},{"word":"禮","parts":["示","曲","豆"],"vocab":[{"text":"禮","bopomo":"ㄌㄧˇ"},{"text":"服","bopomo":"ㄈㄨˊ"}]},{"word":"肩","parts":["戶","肉"],"vocab":[{"text":"肩","bopomo":"ㄐㄧㄢ"},{"text":"頭","bopomo":"ㄊㄡˊ"}]},{"word":"掌","parts":["尚","手"],"vocab":[{"text":"巴","bopomo":"ㄅㄚ"},{"text":"掌","bopomo":"ㄓㄤˇ"}]},{"word":"瓣","parts":["辛","瓜","辛"],"vocab":[{"text":"花","bopomo":"ㄏㄨㄚ"},{"text":"瓣","bopomo":"ㄅㄢˋ"}]},{"word":"鋪","parts":["金","甫"],"vocab":[{"text":"鋪","bopomo":"ㄆㄨ"},{"text":"路","bopomo":"ㄌㄨˋ"}]},{"word":"童","parts":["立","里"],"vocab":[{"text":"童","bopomo":"ㄊㄨㄥˊ"},{"text":"話","bopomo":"ㄏㄨㄚˋ"}]},{"word":"染","parts":["水","九","木"],"vocab":[{"text":"染","bopomo":"ㄖㄢˇ"},{"text":"布","bopomo":"ㄅㄨˋ"}]},{"word":"覆","parts":["西","復"],"vocab":[{"text":"覆","bopomo":"ㄈㄨˋ"},{"text":"蓋","bopomo":"ㄍㄞˋ"}]},{"word":"椏","parts":["木","亞"],"vocab":[{"text":"枝","bopomo":"ㄓ"},{"text":"椏","bopomo":"ㄧㄚ"}]},{"word":"簇","parts":["竹","族"],"vocab":[{"text":"花","bopomo":"ㄏㄨㄚ"},{"text":"團","bopomo":"ㄊㄨㄢˊ"},{"text":"錦","bopomo":"ㄐㄧㄣˇ"},{"text":"簇","bopomo":"ㄘㄨˋ"}]},{"word":"蕊","parts":["艸","惢"],"vocab":[{"text":"花","bopomo":"ㄏㄨㄚ"},{"text":"蕊","bopomo":"ㄖㄨㄟˇ"}]},{"word":"野","parts":["里","予"],"vocab":[{"text":"野","bopomo":"ㄧㄝˇ"},{"text":"外","bopomo":"ㄨㄞˋ"}]},{"word":"柳","parts":["木","卯"],"vocab":[{"text":"野","bopomo":"ㄧㄝˇ"},{"text":"柳","bopomo":"ㄌㄧㄡˇ"}]},{"word":"質","parts":["斤","斤","貝"],"vocab":[{"text":"地","bopomo":"ㄉㄧˋ"},{"text":"質","bopomo":"ㄓˊ"}]},{"word":"岬","parts":["山","甲"],"vocab":[{"text":"海","bopomo":"ㄏㄞˇ"},{"text":"岬","bopomo":"ㄐㄧㄚˇ"}]},{"word":"趴","parts":["足","八"],"vocab":[{"text":"趴","bopomo":"ㄆㄚ"},{"text":"下","bopomo":"ㄒㄧㄚˋ"}]},{"word":"仙","parts":["人","山"],"vocab":[{"text":"仙","bopomo":"ㄒㄧㄢ"},{"text":"女","bopomo":"ㄋㄩˇ"}]},{"word":"列","parts":["歹","刀"],"vocab":[{"text":"排","bopomo":"ㄆㄞˊ"},{"text":"列","bopomo":"ㄌㄧㄝˋ"}]},{"word":"潤","parts":["水","門","王"],"vocab":[{"text":"圓","bopomo":"ㄩㄢˊ"},{"text":"潤","bopomo":"ㄖㄨㄣˋ"}]},{"word":"岩","parts":["山","石"],"vocab":[{"text":"岩","bopomo":"ㄧㄢˊ"},{"text":"石","bopomo":"ㄕˊ"}]},{"word":"菇","parts":["艸","女","古"],"vocab":[{"text":"香","bopomo":"ㄒㄧㄤ"},{"text":"菇","bopomo":"ㄍㄨ"}]},{"word":"豆","parts":["豆"],"vocab":[{"text":"紅","bopomo":"ㄏㄨㄥˊ"},{"text":"豆","bopomo":"ㄉㄡˋ"}]},{"word":"雕","parts":["周","隹"],"vocab":[{"text":"木","bopomo":"ㄇㄨˋ"},{"text":"雕","bopomo":"ㄉㄧㄠ"}]},{"word":"塑","parts":["朔","土"],"vocab":[{"text":"雕","bopomo":"ㄉㄧㄠ"},{"text":"塑","bopomo":"ㄙㄨˋ"}]},{"word":"鬼","parts":["’","田","ㄦ","ㄙ"],"vocab":[{"text":"鬼","bopomo":"ㄍㄨㄟˇ"},{"text":"斧","bopomo":"ㄈㄨˇ"},{"text":"神","bopomo":"ㄕㄣˊ"},{"text":"工","bopomo":"ㄍㄨㄥ"}]},{"word":"龜","parts":["龜"],"vocab":[{"text":"烏","bopomo":"ㄨ"},{"text":"龜","bopomo":"ㄍㄨㄟ"}]},{"word":"燭","parts":["火","蜀"],"vocab":[{"text":"燭","bopomo":"ㄓㄨˊ"},{"text":"臺","bopomo":"ㄊㄞˊ"}]},{"word":"濺","parts":["水","貝","戈","戈"],"vocab":[{"text":"濺","bopomo":"ㄐㄧㄢˋ"},{"text":"起","bopomo":"ㄑㄧˇ"},{"text":"水","bopomo":"ㄕㄨㄟˇ"},{"text":"珠","bopomo":"ㄓㄨ"}]},{"word":"腐","parts":["府","肉"],"vocab":[{"text":"豆","bopomo":"ㄉㄡˋ"},{"text":"腐","bopomo":"ㄈㄨˇ"}]},{"word":"灣","parts":["水","彎"],"vocab":[{"text":"海","bopomo":"ㄏㄞˇ"},{"text":"灣","bopomo":"ㄨㄢ"}]},{"word":"冰","parts":["水","水"],"vocab":[{"text":"浮","bopomo":"ㄈㄨˊ"},{"text":"冰","bopomo":"ㄅㄧㄥ"}]},{"word":"陸","parts":["阜","土","ㄦ","土"],"vocab":[{"text":"陸","bopomo":"ㄌㄨˋ"},{"text":"地","bopomo":"ㄉㄧˋ"}]},{"word":"肺","parts":["肉","市"],"vocab":[{"text":"心","bopomo":"ㄒㄧㄣ"},{"text":"肺","bopomo":"ㄈㄟˋ"}]},{"word":"膚","parts":["虍","胃"],"vocab":[{"text":"皮","bopomo":"ㄆㄧˊ"},{"text":"膚","bopomo":"ㄈㄨ"}]},{"word":"黏","parts":["黍","占"],"vocab":[{"text":"黏","bopomo":"ㄋㄧㄢˊ"},{"text":"貼","bopomo":"ㄊㄧㄝ"}]},{"word":"液","parts":["水","夜"],"vocab":[{"text":"液","bopomo":"ㄧㄝˋ"},{"text":"體","bopomo":"ㄊㄧˇ"}]},{"word":"保","parts":["人","呆"],"vocab":[{"text":"保","bopomo":"ㄅㄠˇ"},{"text":"存","bopomo":"ㄘㄨㄣˊ"}]},{"word":"持","parts":["手","寺"],"vocab":[{"text":"維","bopomo":"ㄨㄟˊ"},{"text":"持","bopomo":"ㄔˊ"}]},{"word":"敵","parts":["立","ㄇ","古","攴"],"vocab":[{"text":"敵","bopomo":"ㄉㄧˊ"},{"text":"人","bopomo":"ㄖㄣˊ"}]},{"word":"縫","parts":["糸","逢"],"vocab":[{"text":"門","bopomo":"ㄇㄣˊ"},{"text":"縫","bopomo":"ㄈㄥˋ"}]},{"word":"伐","parts":["人","戈"],"vocab":[{"text":"砍","bopomo":"ㄎㄢˇ"},{"text":"伐","bopomo":"ㄈㄚ"}]},{"word":"球","parts":["玉","求"],"vocab":[{"text":"地","bopomo":"ㄉㄧˋ"},{"text":"球","bopomo":"ㄑㄧㄡˊ"}]},{"word":"椒","parts":["木","叔"],"vocab":[{"text":"山","bopomo":"ㄕㄢ"},{"text":"椒","bopomo":"ㄐㄧㄠ"},{"text":"魚","bopomo":"ㄩˊ"}]},{"word":"鰓","parts":["魚","思"],"vocab":[{"text":"魚","bopomo":"ㄩˊ"},{"text":"鰓","bopomo":"ㄙㄞ"}]},{"word":"隙","parts":["阜","小","日","小"],"vocab":[{"text":"孔","bopomo":"ㄎㄨㄥˇ"},{"text":"隙","bopomo":"ㄒㄧˋ"}]},{"word":"卵","parts":["卵"],"vocab":[{"text":"魚","bopomo":"ㄩˊ"},{"text":"卵","bopomo":"ㄌㄨㄢˇ"}]}];
 
         let currentIdx = 0;
         let foundParts = [];
 
         function initLevel() {
             const data = quizData[currentIdx];
-            document.getElementById('current-full-word').innerText = data.word;
+			let full_word = data.vocab.map((v)=>{return '<ruby><span>'+v.text+'</span><rt>'+v.bopomo+'</rt>'+'</ruby>'}).join('').replace(data.word,'　');
+            document.getElementById('current-full-word').innerHTML = full_word;
+			
             document.getElementById('display-area').innerText = "";
             document.getElementById('message').innerText = "";
             document.getElementById('next-btn').style.display = "none";
