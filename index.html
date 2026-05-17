@@ -128,14 +128,16 @@
                     目標國字：<span id="current-full-word" class="text-dark">?</span>
                 </div>
 
-                <div class="word-display-box mb-4 shadow-sm" id="display-area">?</div>
+                <div class="word-display-box mb-4 shadow-sm" id="display-area"></div>
                 
                 <div id="message" class="mb-3 text-success"></div>
 
-                <div class="d-flex flex-wrap justify-content-center gap-3 mb-4" id="options">
-                    </div>
+                <div class="d-flex flex-wrap justify-content-center gap-3 mb-4" id="options"></div>
 
                 <div class="d-grid gap-2 col-8 col-md-6 mx-auto">
+                    <button id="submit-btn" class="btn btn-primary btn-lg shadow mb-2" onclick="submitAnswer()">
+                        確定 🔍
+                    </button>
                     <button id="next-btn" class="btn btn-success btn-lg shadow" onclick="nextLevel()" style="display: none;">
                         下一個關卡 ✨
                     </button>
@@ -156,61 +158,117 @@
 		document.querySelector("#progress-tot").textContent = quizData.length;
 
         let currentIdx = 0;
-        let foundParts = [];
+        let userAnswers = [];
 
+// 初始化關卡
         function initLevel() {
 		    document.querySelector("#progress-text").textContent = currentIdx+1;
             const data = quizData[currentIdx];
 			let full_word = data.vocab.map((v)=>{return '<ruby><span>'+v.text+'</span><rt>'+v.bopomo+'</rt>'+'</ruby>'}).join('').replace(data.word,'　');
             document.getElementById('current-full-word').innerHTML = full_word;
 			
-            document.getElementById('display-area').innerText = "";
             document.getElementById('message').innerText = "";
             document.getElementById('next-btn').style.display = "none";
-            foundParts = [];
+            document.getElementById('submit-btn').style.display = "inline-block";
+            
+            // 根據正確答案的長度，初始化空白陣列（例如：三個部件就是 ["", "", ""]）
+            userAnswers = new Array(data.parts.length).fill("");
+            renderSlots();
             
             // 產生選項（包含正確與干擾項）
             const optionsDiv = document.getElementById('options');
             optionsDiv.innerHTML = "";
             
-            // 混合所有部件作為選項
             let allOptions = ["木","同","爪","巴","衤","刀","一","自","夊","月","覀","女","耳","又","扌","台","肖","礻","曲","豆","戶","尚","手","辛","瓜","金","甫","立","里","氵","九","復","亞","𥫗","方","𠂉","矢","艹","心","予","卯","斤","貝","山","甲","𧾷","八","亻","歹","刂","門","王","石","古","周","隹","朔","土","㇀","田","ㄦ","ㄙ","龜","火","罒","勹","虫","戈","府","肉","糹","言","弓","冫","水","阝","市","虍","胃","黍","占","夜","呆","士","寸","ㄇ","攴","夂","丰","辶","𤣩","求","上","小","魚","白","卵","二","人","帚","也","因","幸","卩","分","皿","直","宀","十","見","、","日","共","氺","生","皮","品","乛","工","口","菐","車"];
 			
-			// 總button數 = 12
 			let tot_buttons = 12;
-			// 隨機抽取干擾數
 			let random_options = allOptions.filter(x=>!data.parts.includes(x)).sort(() => Math.random() - 0.5).slice(0,tot_buttons-data.parts.length);
-			
 			let show_options = [...random_options, ...data.parts].sort(() => Math.random() - 0.5);
-			
 
             show_options.forEach(p => {
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
                 btn.innerText = p;
-                btn.onclick = () => checkPart(p, btn);
+                // 改為呼叫 addPart，且不傳送按鈕 DOM 以免進行外觀回饋
+                btn.onclick = () => addPart(p);
                 optionsDiv.appendChild(btn);
+            });
+
+            // 更新上方進度條
+            let progressPercent = (currentIdx / quizData.length) * 100;
+            document.getElementById('game-progress').style.width = progressPercent + '%';
+        }
+
+
+// 渲染 `#display-area` 內的格子
+        function renderSlots() {
+            const displayArea = document.getElementById('display-area');
+            displayArea.innerHTML = "";
+
+            userAnswers.forEach((part, index) => {
+                const slot = document.createElement('div');
+                if (part === "") {
+                    slot.className = 'component-slot';
+                    slot.innerText = "？"; // 空格子顯示問號提示
+                } else {
+                    slot.className = 'component-slot filled';
+                    slot.innerText = part;
+                    // 如果格子有部件，點擊則觸發刪除
+                    slot.onclick = () => removePart(index);
+                }
+                displayArea.appendChild(slot);
             });
         }
 
-        function checkPart(p, btn) {
-            const data = quizData[currentIdx];
-            // 檢查點擊的部件是否在正確清單中，且尚未被找齊次數
-            const targetCount = data.parts.filter(x => x === p).length;
-            const currentCount = foundParts.filter(x => x === p).length;
+        // 點擊部件按鈕：將部件填入第一個找到的空位
+        function addPart(p) {
+            const emptyIndex = userAnswers.indexOf("");
+            if (emptyIndex !== -1) {
+                userAnswers[emptyIndex] = p;
+                renderSlots();
+                document.getElementById('message').innerText = ""; // 清除先前的錯誤訊息
+            }
+        }
 
-            if (data.parts.includes(p) && currentCount < targetCount) {
-                foundParts.push(p);
-                btn.classList.add('correct');
-                document.getElementById('display-area').innerText = foundParts.join(" + ");
-                
-                if (foundParts.length === data.parts.length) {
-                    document.getElementById('message').innerText = "太棒了！守護成功！✨";
-                    document.getElementById('next-btn').style.display = "inline-block";
+        // 點擊顯示區格子：刪除該格子的部件
+        function removePart(index) {
+            userAnswers[index] = "";
+            renderSlots();
+            document.getElementById('message').innerText = ""; // 清除先前的錯誤訊息
+        }
+
+        // 點擊「確定」按鈕：驗證答案
+        function submitAnswer() {
+            const data = quizData[currentIdx];
+
+            // 檢查是否還有格子沒填滿
+            if (userAnswers.includes("")) {
+                document.getElementById('message').innerText = "請先把格子都填滿再檢查喔！🌱";
+                return;
+            }
+
+            // 將使用者答案與標準答案各自排序後比對（不限輸入順序）
+            const sortedUser = [...userAnswers].sort();
+            const sortedTarget = [...data.parts].sort();
+
+            let isCorrect = true;
+            for (let i = 0; i < sortedTarget.length; i++) {
+                if (sortedUser[i] !== sortedTarget[i]) {
+                    isCorrect = false;
+                    break;
                 }
+            }
+
+            if (isCorrect) {
+                document.getElementById('message').innerText = "太棒了！守護成功！✨";
+                document.getElementById('next-btn').style.display = "inline-block";
+                document.getElementById('submit-btn').style.display = "none";
+                
+                // 更新進度條至完成當前關卡
+                let progressPercent = ((currentIdx + 1) / quizData.length) * 100;
+                document.getElementById('game-progress').style.width = progressPercent + '%';
             } else {
-                document.getElementById('message').innerText = "再試試看喔，你可以的！🌱";
-                setTimeout(() => { document.getElementById('message').innerText = ""; }, 1500);
+                document.getElementById('message').innerText = "再試試看喔，零件好像裝錯了！🧩";
             }
         }
 
