@@ -105,6 +105,21 @@
 			border: 1px solid;
 		}
 		
+		/* 答對後回填目標字的專屬綠色樣式 */
+        .correct-fill-text {
+            color: var(--forest-green);
+            font-weight: 900;
+        }
+
+        /* 星星標籤樣式 */
+        .star-badge {
+            font-size: 1.8rem;
+            color: #ffb300;
+            letter-spacing: 2px;
+            display: block;
+            margin-bottom: 5px;
+        }
+		
 		@font-face {
 			font-family: "Bopomofo";
 			src: url("font/bopomofo.woff2") format("woff2"), url("font/bopomofo.woff") format("woff");
@@ -123,6 +138,8 @@
                 <div class="progress mb-3">
                     <div id="game-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
                 </div>
+
+                <div id="star-area" class="star-badge"></div>
 
                 <div class="mb-2 text-secondary fw-bold"  style="font-size: 3rem;">
                     目標國字：<span id="current-full-word" class="text-dark">?</span>
@@ -144,7 +161,7 @@
                 </div>
             </div>
 
-            <p class="mt-4 text-secondary small">練習進度：<span id="progress-text">0</span>/<span id="progress-tot">0</span></p>
+            <p class="mt-4 text-secondary small">本輪練習進度：<span id="progress-text">0</span>/<span id="progress-tot">0</span></p>
         </div>
     </div>
 </div>
@@ -153,17 +170,129 @@
 
     <script>
         // 設定題目：國字與對應的部件
-        const quizData = [{"word":"桐","parts":["木","同"],"vocab":[{"text":"油","bopomo":"ㄧㄡˊ"},{"text":"桐","bopomo":"ㄊㄨㄥˊ"}]},{"word":"爬","parts":["爪","巴"],"vocab":[{"text":"爬","bopomo":"ㄆㄚˊ"},{"text":"樹","bopomo":"ㄕㄨˋ"}]},{"word":"初","parts":["衤","刀"],"vocab":[{"text":"初","bopomo":"ㄔㄨ"},{"text":"夏","bopomo":"ㄒㄧㄚˋ"}]},{"word":"夏","parts":["一","自","夊"],"vocab":[{"text":"夏","bopomo":"ㄒㄧㄚˋ"},{"text":"令","bopomo":"ㄌㄧㄥˋ"},{"text":"營","bopomo":"ㄧㄥˊ"}]},{"word":"腰","parts":["月","覀","女"],"vocab":[{"text":"山","bopomo":"ㄕㄢ"},{"text":"腰","bopomo":"ㄧㄠ"}]},{"word":"取","parts":["耳","又"],"vocab":[{"text":"取","bopomo":"ㄑㄩˇ"},{"text":"名","bopomo":"ㄇㄧㄥˊ"}]},{"word":"抬","parts":["扌","台"],"vocab":[{"text":"抬","bopomo":"ㄊㄞˊ"},{"text":"頭","bopomo":"ㄊㄡˊ"}]},{"word":"梢","parts":["木","肖"],"vocab":[{"text":"樹","bopomo":"ㄕㄨˋ"},{"text":"梢","bopomo":"ㄕㄠ"}]},{"word":"禮","parts":["礻","曲","豆"],"vocab":[{"text":"禮","bopomo":"ㄌㄧˇ"},{"text":"服","bopomo":"ㄈㄨˊ"}]},{"word":"肩","parts":["戶","月"],"vocab":[{"text":"肩","bopomo":"ㄐㄧㄢ"},{"text":"頭","bopomo":"ㄊㄡˊ"}]},{"word":"掌","parts":["尚","手"],"vocab":[{"text":"巴","bopomo":"ㄅㄚ"},{"text":"掌","bopomo":"ㄓㄤˇ"}]},{"word":"瓣","parts":["辛","瓜","辛"],"vocab":[{"text":"花","bopomo":"ㄏㄨㄚ"},{"text":"瓣","bopomo":"ㄅㄢˋ"}]},{"word":"鋪","parts":["金","甫"],"vocab":[{"text":"鋪","bopomo":"ㄆㄨ"},{"text":"路","bopomo":"ㄌㄨˋ"}]},{"word":"童","parts":["立","里"],"vocab":[{"text":"童","bopomo":"ㄊㄨㄥˊ"},{"text":"話","bopomo":"ㄏㄨㄚˋ"}]},{"word":"染","parts":["氵","九","木"],"vocab":[{"text":"染","bopomo":"ㄖㄢˇ"},{"text":"布","bopomo":"ㄅㄨˋ"}]},{"word":"覆","parts":["覀","復"],"vocab":[{"text":"覆","bopomo":"ㄈㄨˋ"},{"text":"蓋","bopomo":"ㄍㄞˋ"}]},{"word":"椏","parts":["木","亞"],"vocab":[{"text":"枝","bopomo":"ㄓ"},{"text":"椏","bopomo":"ㄧㄚ"}]},{"word":"簇","parts":["𥫗","方","𠂉","矢"],"vocab":[{"text":"花","bopomo":"ㄏㄨㄚ"},{"text":"團","bopomo":"ㄊㄨㄢˊ"},{"text":"錦","bopomo":"ㄐㄧㄣˇ"},{"text":"簇","bopomo":"ㄘㄨˋ"}]},{"word":"蕊","parts":["艹","心","心","心"],"vocab":[{"text":"花","bopomo":"ㄏㄨㄚ"},{"text":"蕊","bopomo":"ㄖㄨㄟˇ"}]},{"word":"野","parts":["里","予"],"vocab":[{"text":"野","bopomo":"ㄧㄝˇ"},{"text":"外","bopomo":"ㄨㄞˋ"}]},{"word":"柳","parts":["木","卯"],"vocab":[{"text":"野","bopomo":"ㄧㄝˇ"},{"text":"柳","bopomo":"ㄌㄧㄡˇ"}]},{"word":"質","parts":["斤","斤","貝"],"vocab":[{"text":"地","bopomo":"ㄉㄧˋ"},{"text":"質","bopomo":"ㄓˊ"}]},{"word":"岬","parts":["山","甲"],"vocab":[{"text":"海","bopomo":"ㄏㄞˇ"},{"text":"岬","bopomo":"ㄐㄧㄚˇ"}]},{"word":"趴","parts":["𧾷","八"],"vocab":[{"text":"趴","bopomo":"ㄆㄚ"},{"text":"下","bopomo":"ㄒㄧㄚˋ"}]},{"word":"仙","parts":["亻","山"],"vocab":[{"text":"仙","bopomo":"ㄒㄧㄢ"},{"text":"女","bopomo":"ㄋㄩˇ"}]},{"word":"列","parts":["歹","刂"],"vocab":[{"text":"排","bopomo":"ㄆㄞˊ"},{"text":"列","bopomo":"ㄌㄧㄝˋ"}]},{"word":"潤","parts":["氵","門","王"],"vocab":[{"text":"圓","bopomo":"ㄩㄢˊ"},{"text":"潤","bopomo":"ㄖㄨㄣˋ"}]},{"word":"岩","parts":["山","石"],"vocab":[{"text":"岩","bopomo":"ㄧㄢˊ"},{"text":"石","bopomo":"ㄕˊ"}]},{"word":"菇","parts":["艹","女","古"],"vocab":[{"text":"香","bopomo":"ㄒㄧㄤ"},{"text":"菇","bopomo":"ㄍㄨ"}]},{"word":"豆","parts":["豆"],"vocab":[{"text":"紅","bopomo":"ㄏㄨㄥˊ"},{"text":"豆","bopomo":"ㄉㄡˋ"}]},{"word":"雕","parts":["周","隹"],"vocab":[{"text":"木","bopomo":"ㄇㄨˋ"},{"text":"雕","bopomo":"ㄉㄧㄠ"}]},{"word":"塑","parts":["朔","土"],"vocab":[{"text":"雕","bopomo":"ㄉㄧㄠ"},{"text":"塑","bopomo":"ㄙㄨˋ"}]},{"word":"鬼","parts":["㇀","田","ㄦ","ㄙ"],"vocab":[{"text":"鬼","bopomo":"ㄍㄨㄟˇ"},{"text":"斧","bopomo":"ㄈㄨˇ"},{"text":"神","bopomo":"ㄕㄣˊ"},{"text":"工","bopomo":"ㄍㄨㄥ"}]},{"word":"龜","parts":["龜"],"vocab":[{"text":"烏","bopomo":"ㄨ"},{"text":"龜","bopomo":"ㄍㄨㄟ"}]},{"word":"燭","parts":["火","罒","勹","虫"],"vocab":[{"text":"燭","bopomo":"ㄓㄨˊ"},{"text":"臺","bopomo":"ㄊㄞˊ"}]},{"word":"濺","parts":["氵","貝","戈","戈"],"vocab":[{"text":"濺","bopomo":"ㄐㄧㄢˋ"},{"text":"起","bopomo":"ㄑㄧˇ"},{"text":"水","bopomo":"ㄕㄨㄟˇ"},{"text":"珠","bopomo":"ㄓㄨ"}]},{"word":"腐","parts":["府","肉"],"vocab":[{"text":"豆","bopomo":"ㄉㄡˋ"},{"text":"腐","bopomo":"ㄈㄨˇ"}]},{"word":"灣","parts":["氵","糹","言","糹","弓"],"vocab":[{"text":"海","bopomo":"ㄏㄞˇ"},{"text":"灣","bopomo":"ㄨㄢ"}]},{"word":"冰","parts":["冫","水"],"vocab":[{"text":"浮","bopomo":"ㄈㄨˊ"},{"text":"冰","bopomo":"ㄅㄧㄥ"}]},{"word":"陸","parts":["阝","土","ㄦ","土"],"vocab":[{"text":"陸","bopomo":"ㄌㄨˋ"},{"text":"地","bopomo":"ㄉㄧˋ"}]},{"word":"肺","parts":["月","市"],"vocab":[{"text":"心","bopomo":"ㄒㄧㄣ"},{"text":"肺","bopomo":"ㄈㄟˋ"}]},{"word":"膚","parts":["虍","胃"],"vocab":[{"text":"皮","bopomo":"ㄆㄧˊ"},{"text":"膚","bopomo":"ㄈㄨ"}]},{"word":"黏","parts":["黍","占"],"vocab":[{"text":"黏","bopomo":"ㄋㄧㄢˊ"},{"text":"貼","bopomo":"ㄊㄧㄝ"}]},{"word":"液","parts":["氵","夜"],"vocab":[{"text":"液","bopomo":"ㄧㄝˋ"},{"text":"體","bopomo":"ㄊㄧˇ"}]},{"word":"保","parts":["亻","呆"],"vocab":[{"text":"保","bopomo":"ㄅㄠˇ"},{"text":"存","bopomo":"ㄘㄨㄣˊ"}]},{"word":"持","parts":["手","士","寸"],"vocab":[{"text":"維","bopomo":"ㄨㄟˊ"},{"text":"持","bopomo":"ㄔˊ"}]},{"word":"敵","parts":["立","ㄇ","古","攴"],"vocab":[{"text":"敵","bopomo":"ㄉㄧˊ"},{"text":"人","bopomo":"ㄖㄣˊ"}]},{"word":"縫","parts":["糹","夂","丰","辶"],"vocab":[{"text":"門","bopomo":"ㄇㄣˊ"},{"text":"縫","bopomo":"ㄈㄥˋ"}]},{"word":"伐","parts":["亻","戈"],"vocab":[{"text":"砍","bopomo":"ㄎㄢˇ"},{"text":"伐","bopomo":"ㄈㄚ"}]},{"word":"球","parts":["𤣩","求"],"vocab":[{"text":"地","bopomo":"ㄉㄧˋ"},{"text":"球","bopomo":"ㄑㄧㄡˊ"}]},{"word":"椒","parts":["木","上","小","又"],"vocab":[{"text":"山","bopomo":"ㄕㄢ"},{"text":"椒","bopomo":"ㄐㄧㄠ"},{"text":"魚","bopomo":"ㄩˊ"}]},{"word":"鰓","parts":["魚","田","心"],"vocab":[{"text":"魚","bopomo":"ㄩˊ"},{"text":"鰓","bopomo":"ㄙㄞ"}]},{"word":"隙","parts":["阝","小","白","小"],"vocab":[{"text":"孔","bopomo":"ㄎㄨㄥˇ"},{"text":"隙","bopomo":"ㄒㄧˋ"}]},{"word":"卵","parts":["卵"],"vocab":[{"text":"魚","bopomo":"ㄩˊ"},{"text":"卵","bopomo":"ㄌㄨㄢˇ"}]},{"word":"漁","parts":["氵","魚"],"vocab":[{"text":"漁","bopomo":"ㄩˊ"},{"text":"夫","bopomo":"ㄈㄨ"}]},{"word":"夫","parts":["二","人"],"vocab":[{"text":"夫","bopomo":"ㄈㄨ"},{"text":"婦","bopomo":"ㄈㄨˋ"}]},{"word":"婦","parts":["女","帚"],"vocab":[{"text":"夫","bopomo":"ㄈㄨ"},{"text":"婦","bopomo":"ㄈㄨˋ"}]},{"word":"拖","parts":["扌","𠂉","也"],"vocab":[{"text":"拖","bopomo":"ㄊㄨㄛ"},{"text":"拉","bopomo":"ㄌㄚ"}]},{"word":"求","parts":["求"],"vocab":[{"text":"請","bopomo":"ㄑㄧㄥˇ"},{"text":"求","bopomo":"ㄑㄧㄡˊ"}]},{"word":"恩","parts":["因","心"],"vocab":[{"text":"恩","bopomo":"ㄣ"},{"text":"情","bopomo":"ㄑㄧㄥˊ"}]},{"word":"報","parts":["幸","卩","又"],"vocab":[{"text":"回","bopomo":"ㄏㄨㄟˊ"},{"text":"報","bopomo":"ㄅㄠˋ"}]},{"word":"盆","parts":["分","皿"],"vocab":[{"text":"木","bopomo":"ㄇㄨˋ"},{"text":"盆","bopomo":"ㄆㄣˊ"}]},{"word":"值","parts":["亻","直"],"vocab":[{"text":"價","bopomo":"ㄐㄧㄚˋ"},{"text":"值","bopomo":"ㄓˊ"}]},{"word":"寬","parts":["宀","十","十","見","、"],"vocab":[{"text":"寬","bopomo":"ㄎㄨㄢ"},{"text":"大","bopomo":"ㄉㄚˋ"}]},{"word":"暴","parts":["日","共","氺"],"vocab":[{"text":"風","bopomo":"ㄈㄥ"},{"text":"暴","bopomo":"ㄅㄠˋ"}]},{"word":"聊","parts":["耳","卯"],"vocab":[{"text":"無","bopomo":"ㄨˊ"},{"text":"聊","bopomo":"ㄌㄧㄠˊ"}]},{"word":"隆","parts":["阝","夊","一","生"],"vocab":[{"text":"轟","bopomo":"ㄏㄨㄥ"},{"text":"隆","bopomo":"ㄌㄨㄥˊ"}]},{"word":"破","parts":["石","皮"],"vocab":[{"text":"破","bopomo":"ㄆㄛˋ"},{"text":"洞","bopomo":"ㄉㄨㄥˋ"}]},{"word":"藻","parts":["艹","氵","品","木"],"vocab":[{"text":"水","bopomo":"ㄕㄨㄟˇ"},{"text":"藻","bopomo":"ㄗㄠˇ"}]},{"word":"濤","parts":["水","士","乛","工","一","口","寸"],"vocab":[{"text":"波","bopomo":"ㄅㄛ"},{"text":"濤","bopomo":"ㄊㄠˊ"}]},{"word":"僕","parts":["亻","菐"],"vocab":[{"text":"僕","bopomo":"ㄆㄨˊ"},{"text":"人","bopomo":"ㄖㄣˊ"}]},{"word":"轟","parts":["車","車","車"],"vocab":[{"text":"轟","bopomo":"ㄏㄨㄥ"},{"text":"隆","bopomo":"ㄌㄨㄥˊ"}]}];
+        const rawQuizData = [{"word":"桐","parts":["木","同"],"vocab":[{"text":"油","bopomo":"ㄧㄡˊ"},{"text":"桐","bopomo":"ㄊㄨㄥˊ"}]},{"word":"爬","parts":["爪","巴"],"vocab":[{"text":"爬","bopomo":"ㄆㄚˊ"},{"text":"樹","bopomo":"ㄕㄨˋ"}]},{"word":"初","parts":["衤","刀"],"vocab":[{"text":"初","bopomo":"ㄔㄨ"},{"text":"夏","bopomo":"ㄒㄧㄚˋ"}]},{"word":"夏","parts":["一","自","夊"],"vocab":[{"text":"夏","bopomo":"ㄒㄧㄚˋ"},{"text":"令","bopomo":"ㄌㄧㄥˋ"},{"text":"營","bopomo":"ㄧㄥˊ"}]},{"word":"腰","parts":["月","覀","女"],"vocab":[{"text":"山","bopomo":"ㄕㄢ"},{"text":"腰","bopomo":"ㄧㄠ"}]},{"word":"取","parts":["耳","又"],"vocab":[{"text":"取","bopomo":"ㄑㄩˇ"},{"text":"名","bopomo":"ㄇㄧㄥˊ"}]},{"word":"抬","parts":["扌","台"],"vocab":[{"text":"抬","bopomo":"ㄊㄞˊ"},{"text":"頭","bopomo":"ㄊㄡˊ"}]},{"word":"梢","parts":["木","肖"],"vocab":[{"text":"樹","bopomo":"ㄕㄨˋ"},{"text":"梢","bopomo":"ㄕㄠ"}]},{"word":"禮","parts":["礻","曲","豆"],"vocab":[{"text":"禮","bopomo":"ㄌㄧˇ"},{"text":"服","bopomo":"ㄈㄨˊ"}]},{"word":"肩","parts":["戶","月"],"vocab":[{"text":"肩","bopomo":"ㄐㄧㄢ"},{"text":"頭","bopomo":"ㄊㄡˊ"}]},{"word":"掌","parts":["尚","手"],"vocab":[{"text":"巴","bopomo":"ㄅㄚ"},{"text":"掌","bopomo":"ㄓㄤˇ"}]},{"word":"瓣","parts":["辛","瓜","辛"],"vocab":[{"text":"花","bopomo":"ㄏㄨㄚ"},{"text":"瓣","bopomo":"ㄅㄢˋ"}]},{"word":"鋪","parts":["金","甫"],"vocab":[{"text":"鋪","bopomo":"ㄆㄨ"},{"text":"路","bopomo":"ㄌㄨˋ"}]},{"word":"童","parts":["立","里"],"vocab":[{"text":"童","bopomo":"ㄊㄨㄥˊ"},{"text":"話","bopomo":"ㄏㄨㄚˋ"}]},{"word":"染","parts":["氵","九","木"],"vocab":[{"text":"染","bopomo":"ㄖㄢˇ"},{"text":"布","bopomo":"ㄅㄨˋ"}]},{"word":"覆","parts":["覀","復"],"vocab":[{"text":"覆","bopomo":"ㄈㄨˋ"},{"text":"蓋","bopomo":"ㄍㄞˋ"}]},{"word":"椏","parts":["木","亞"],"vocab":[{"text":"枝","bopomo":"ㄓ"},{"text":"椏","bopomo":"ㄧㄚ"}]},{"word":"簇","parts":["𥫗","方","𠂉","矢"],"vocab":[{"text":"花","bopomo":"ㄏㄨㄚ"},{"text":"團","bopomo":"ㄊㄨㄢˊ"},{"text":"錦","bopomo":"ㄐㄧㄣˇ"},{"text":"簇","bopomo":"ㄘㄨˋ"}]},{"word":"蕊","parts":["艹","心","心","心"],"vocab":[{"text":"花","bopomo":"ㄏㄨㄚ"},{"text":"蕊","bopomo":"ㄖㄨㄟˇ"}]},{"word":"野","parts":["里","予"],"vocab":[{"text":"野","bopomo":"ㄧㄝˇ"},{"text":"外","bopomo":"ㄨㄞˋ"}]},{"word":"柳","parts":["木","卯"],"vocab":[{"text":"野","bopomo":"ㄧㄝˇ"},{"text":"柳","bopomo":"ㄌㄧㄡˇ"}]},{"word":"質","parts":["斤","斤","貝"],"vocab":[{"text":"地","bopomo":"ㄉㄧˋ"},{"text":"質","bopomo":"ㄓˊ"}]},{"word":"岬","parts":["山","甲"],"vocab":[{"text":"海","bopomo":"ㄏㄞˇ"},{"text":"岬","bopomo":"ㄐㄧㄚˇ"}]},{"word":"趴","parts":["𧾷","八"],"vocab":[{"text":"趴","bopomo":"ㄆㄚ"},{"text":"下","bopomo":"ㄒㄧㄚˋ"}]},{"word":"仙","parts":["亻","山"],"vocab":[{"text":"仙","bopomo":"ㄒㄧㄢ"},{"text":"女","bopomo":"ㄋㄩˇ"}]},{"word":"列","parts":["歹","刂"],"vocab":[{"text":"排","bopomo":"ㄆㄞˊ"},{"text":"列","bopomo":"ㄌㄧㄝˋ"}]},{"word":"潤","parts":["氵","門","王"],"vocab":[{"text":"圓","bopomo":"ㄩㄢˊ"},{"text":"潤","bopomo":"ㄖㄨㄣˋ"}]},{"word":"岩","parts":["山","石"],"vocab":[{"text":"岩","bopomo":"ㄧㄢˊ"},{"text":"石","bopomo":"ㄕˊ"}]},{"word":"菇","parts":["艹","女","古"],"vocab":[{"text":"香","bopomo":"ㄒㄧㄤ"},{"text":"菇","bopomo":"ㄍㄨ"}]},{"word":"豆","parts":["豆"],"vocab":[{"text":"紅","bopomo":"ㄏㄨㄥˊ"},{"text":"豆","bopomo":"ㄉㄡˋ"}]},{"word":"雕","parts":["周","隹"],"vocab":[{"text":"木","bopomo":"ㄇㄨˋ"},{"text":"雕","bopomo":"ㄉㄧㄠ"}]},{"word":"塑","parts":["朔","土"],"vocab":[{"text":"雕","bopomo":"ㄉㄧㄠ"},{"text":"塑","bopomo":"ㄙㄨˋ"}]},{"word":"鬼","parts":["㇀","田","ㄦ","ㄙ"],"vocab":[{"text":"鬼","bopomo":"ㄍㄨㄟˇ"},{"text":"斧","bopomo":"ㄈㄨˇ"},{"text":"神","bopomo":"ㄕㄣˊ"},{"text":"工","bopomo":"ㄍㄨㄥ"}]},{"word":"龜","parts":["龜"],"vocab":[{"text":"烏","bopomo":"ㄨ"},{"text":"龜","bopomo":"ㄍㄨㄟ"}]},{"word":"燭","parts":["火","罒","勹","虫"],"vocab":[{"text":"燭","bopomo":"ㄓㄨˊ"},{"text":"臺","bopomo":"ㄊㄞˊ"}]},{"word":"濺","parts":["氵","貝","戈","戈"],"vocab":[{"text":"濺","bopomo":"ㄐㄧㄢˋ"},{"text":"起","bopomo":"ㄑㄧˇ"},{"text":"水","bopomo":"ㄕㄨㄟˇ"},{"text":"珠","bopomo":"ㄓㄨ"}]},{"word":"腐","parts":["府","肉"],"vocab":[{"text":"豆","bopomo":"ㄉㄡˋ"},{"text":"腐","bopomo":"ㄈㄨˇ"}]},{"word":"灣","parts":["氵","糹","言","糹","弓"],"vocab":[{"text":"海","bopomo":"ㄏㄞˇ"},{"text":"灣","bopomo":"ㄨㄢ"}]},{"word":"冰","parts":["冫","水"],"vocab":[{"text":"浮","bopomo":"ㄈㄨˊ"},{"text":"冰","bopomo":"ㄅㄧㄥ"}]},{"word":"陸","parts":["阝","土","ㄦ","土"],"vocab":[{"text":"陸","bopomo":"ㄌㄨˋ"},{"text":"地","bopomo":"ㄉㄧˋ"}]},{"word":"肺","parts":["月","市"],"vocab":[{"text":"心","bopomo":"ㄒㄧㄣ"},{"text":"肺","bopomo":"ㄈㄟˋ"}]},{"word":"膚","parts":["虍","胃"],"vocab":[{"text":"皮","bopomo":"ㄆㄧˊ"},{"text":"膚","bopomo":"ㄈㄨ"}]},{"word":"黏","parts":["黍","占"],"vocab":[{"text":"黏","bopomo":"ㄋㄧㄢˊ"},{"text":"貼","bopomo":"ㄊㄧㄝ"}]},{"word":"液","parts":["氵","夜"],"vocab":[{"text":"液","bopomo":"ㄧㄝˋ"},{"text":"體","bopomo":"ㄊㄧˇ"}]},{"word":"保","parts":["亻","呆"],"vocab":[{"text":"保","bopomo":"ㄅㄠˇ"},{"text":"存","bopomo":"ㄘㄨㄣˊ"}]},{"word":"持","parts":["手","士","寸"],"vocab":[{"text":"維","bopomo":"ㄨㄟˊ"},{"text":"持","bopomo":"ㄔˊ"}]},{"word":"敵","parts":["立","ㄇ","古","攴"],"vocab":[{"text":"敵","bopomo":"ㄉㄧˊ"},{"text":"人","bopomo":"ㄖㄣˊ"}]},{"word":"縫","parts":["糹","夂","丰","辶"],"vocab":[{"text":"門","bopomo":"ㄇㄣˊ"},{"text":"縫","bopomo":"ㄈㄥˋ"}]},{"word":"伐","parts":["亻","戈"],"vocab":[{"text":"砍","bopomo":"ㄎㄢˇ"},{"text":"伐","bopomo":"ㄈㄚ"}]},{"word":"球","parts":["𤣩","求"],"vocab":[{"text":"地","bopomo":"ㄉㄧˋ"},{"text":"球","bopomo":"ㄑㄧㄡˊ"}]},{"word":"椒","parts":["木","上","小","又"],"vocab":[{"text":"山","bopomo":"ㄕㄢ"},{"text":"椒","bopomo":"ㄐㄧㄠ"},{"text":"魚","bopomo":"ㄩˊ"}]},{"word":"鰓","parts":["魚","田","心"],"vocab":[{"text":"魚","bopomo":"ㄩˊ"},{"text":"鰓","bopomo":"ㄙㄞ"}]},{"word":"隙","parts":["阝","小","白","小"],"vocab":[{"text":"孔","bopomo":"ㄎㄨㄥˇ"},{"text":"隙","bopomo":"ㄒㄧˋ"}]},{"word":"卵","parts":["卵"],"vocab":[{"text":"魚","bopomo":"ㄩˊ"},{"text":"卵","bopomo":"ㄌㄨㄢˇ"}]},{"word":"漁","parts":["氵","魚"],"vocab":[{"text":"漁","bopomo":"ㄩˊ"},{"text":"夫","bopomo":"ㄈㄨ"}]},{"word":"夫","parts":["二","人"],"vocab":[{"text":"夫","bopomo":"ㄈㄨ"},{"text":"婦","bopomo":"ㄈㄨˋ"}]},{"word":"婦","parts":["女","帚"],"vocab":[{"text":"夫","bopomo":"ㄈㄨ"},{"text":"婦","bopomo":"ㄈㄨˋ"}]},{"word":"拖","parts":["扌","𠂉","也"],"vocab":[{"text":"拖","bopomo":"ㄊㄨㄛ"},{"text":"拉","bopomo":"ㄌㄚ"}]},{"word":"求","parts":["求"],"vocab":[{"text":"請","bopomo":"ㄑㄧㄥˇ"},{"text":"求","bopomo":"ㄑㄧㄡˊ"}]},{"word":"恩","parts":["因","心"],"vocab":[{"text":"恩","bopomo":"ㄣ"},{"text":"情","bopomo":"ㄑㄧㄥˊ"}]},{"word":"報","parts":["幸","卩","又"],"vocab":[{"text":"回","bopomo":"ㄏㄨㄟˊ"},{"text":"報","bopomo":"ㄅㄠˋ"}]},{"word":"盆","parts":["分","皿"],"vocab":[{"text":"木","bopomo":"ㄇㄨˋ"},{"text":"盆","bopomo":"ㄆㄣˊ"}]},{"word":"值","parts":["亻","直"],"vocab":[{"text":"價","bopomo":"ㄐㄧㄚˋ"},{"text":"值","bopomo":"ㄓˊ"}]},{"word":"寬","parts":["宀","十","十","見","、"],"vocab":[{"text":"寬","bopomo":"ㄎㄨㄢ"},{"text":"大","bopomo":"ㄉㄚˋ"}]},{"word":"暴","parts":["日","共","氺"],"vocab":[{"text":"風","bopomo":"ㄈㄥ"},{"text":"暴","bopomo":"ㄅㄠˋ"}]},{"word":"聊","parts":["耳","卯"],"vocab":[{"text":"無","bopomo":"ㄨˊ"},{"text":"聊","bopomo":"ㄌㄧㄠˊ"}]},{"word":"隆","parts":["阝","夊","一","生"],"vocab":[{"text":"轟","bopomo":"ㄏㄨㄥ"},{"text":"隆","bopomo":"ㄌㄨㄥˊ"}]},{"word":"破","parts":["石","皮"],"vocab":[{"text":"破","bopomo":"ㄆㄛˋ"},{"text":"洞","bopomo":"ㄉㄨㄥˋ"}]},{"word":"藻","parts":["艹","氵","品","木"],"vocab":[{"text":"水","bopomo":"ㄕㄨㄟˇ"},{"text":"藻","bopomo":"ㄗㄠˇ"}]},{"word":"濤","parts":["水","士","乛","工","一","口","寸"],"vocab":[{"text":"波","bopomo":"ㄅㄛ"},{"text":"濤","bopomo":"ㄊㄠˊ"}]},{"word":"僕","parts":["亻","菐"],"vocab":[{"text":"僕","bopomo":"ㄆㄨˊ"},{"text":"人","bopomo":"ㄖㄣˊ"}]},{"word":"轟","parts":["車","車","車"],"vocab":[{"text":"轟","bopomo":"ㄏㄨㄥ"},{"text":"隆","bopomo":"ㄌㄨㄥˊ"}]}];
 		
-		document.querySelector("#progress-tot").textContent = quizData.length;
 
+
+        let quizData = []; // 本輪抽選出的 20 題
         let currentIdx = 0;
         let userAnswers = [];
+        let db = null;
+
+		// 1. 初始化 IndexedDB
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open("ForestWordDB", 1);
+                
+                request.onupgradeneeded = function(e) {
+                    const dbInstance = e.target.result;
+                    if (!dbInstance.objectStoreNames.contains("wordProgress")) {
+                        dbInstance.createObjectStore("wordProgress", { keyPath: "word" });
+                    }
+                };
+
+                request.onsuccess = function(e) {
+                    db = e.target.result;
+                    resolve();
+                };
+
+                request.onerror = function(e) {
+                    console.error("IndexedDB 開啟失敗", e);
+                    reject();
+                };
+            });
+        }
+		
+		// 2. 取得某個字的答對次數
+        function getWordCount(word) {
+            return new Promise((resolve) => {
+                const transaction = db.transaction(["wordProgress"], "readonly");
+                const store = transaction.objectStore(["wordProgress"]);
+                const request = store.get(word);
+                request.onsuccess = function(e) {
+                    if (e.target.result) {
+                        resolve(e.target.result.count || 0);
+                    } else {
+                        resolve(0);
+                    }
+                };
+                request.onerror = function() {
+                    resolve(0);
+                };
+            });
+        }
+
+        // 3. 更新某個字的答對次數 (isCorrect為true則+1，最高5；false則清零)
+        function updateWordCount(word, isCorrect) {
+            return new Promise((resolve) => {
+                const transaction = db.transaction(["wordProgress"], "readwrite");
+                const store = transaction.objectStore(["wordProgress"]);
+                const request = store.get(word);
+
+                request.onsuccess = function(e) {
+                    let data = e.target.result || { word: word, count: 0 };
+                    if (isCorrect) {
+                        data.count = Math.min(5, data.count + 1);
+                    } else {
+                        data.count = 0;
+                    }
+                    store.put(data);
+                    resolve(data.count);
+                };
+            });
+        }
+
+        // 4. 加權抽選 20 個字建立當前輪次題庫
+        async function generateQuizSession() {
+            let listWithWeights = [];
+            
+            // 讀取所有字的目前次數並計算權重
+            for (let item of rawQuizData) {
+                const count = await getWordCount(item.word);
+                let weight = 5; // 預設 0 次為 5
+                if (count === 1) weight = 4;
+                else if (count === 2) weight = 3;
+                else if (count === 3) weight = 2;
+                else if (count === 4) weight = 1;
+                else if (count === 5) weight = 0.1; // 5次最低
+                
+                listWithWeights.push({ item: item, weight: weight });
+            }
+
+            // 根據加權比例隨機抽取 20 題
+            let selected = [];
+            const targetCount = Math.min(20, rawQuizData.length);
+
+            while (selected.length < targetCount && listWithWeights.length > 0) {
+                let totalWeight = listWithWeights.reduce((sum, el) => sum + el.weight, 0);
+                let randomNum = Math.random() * totalWeight;
+                let currentSum = 0;
+                
+                for (let i = 0; i < listWithWeights.length; i++) {
+                    currentSum += listWithWeights[i].weight;
+                    if (randomNum <= currentSum) {
+                        selected.push(listWithWeights[i].item);
+                        listWithWeights.splice(i, 1); // 避免重複抽取
+                        break;
+                    }
+                }
+            }
+
+            quizData = selected;
+            document.querySelector("#progress-tot").textContent = quizData.length;
+        }
 
 // 初始化關卡
-        function initLevel() {
-		    document.querySelector("#progress-text").textContent = currentIdx+1;
+        async function initLevel() {
+            if (quizData.length === 0) return;
+            
+		    document.querySelector("#progress-text").textContent = currentIdx + 1;
             const data = quizData[currentIdx];
+            
+            // 呈現星星進度
+            const currentCount = await getWordCount(data.word);
+            renderStars(currentCount);
+
 			let full_word = data.vocab.map((v)=>{return '<ruby><span>'+v.text+'</span><rt>'+v.bopomo+'</rt>'+'</ruby>'}).join('').replace(data.word,'　');
             document.getElementById('current-full-word').innerHTML = full_word;
 			
@@ -171,36 +300,51 @@
             document.getElementById('next-btn').style.display = "none";
             document.getElementById('submit-btn').style.display = "inline-block";
             
-            // 根據正確答案的長度，初始化空白陣列（例如：三個部件就是 ["", "", ""]）
             userAnswers = new Array(data.parts.length).fill("");
             renderSlots();
             
-            // 產生選項（包含正確與干擾項）
+            // 產生選項
             const optionsDiv = document.getElementById('options');
             optionsDiv.innerHTML = "";
             
             let allOptions = ["木","同","爪","巴","衤","刀","一","自","夊","月","覀","女","耳","又","扌","台","肖","礻","曲","豆","戶","尚","手","辛","瓜","金","甫","立","里","氵","九","復","亞","𥫗","方","𠂉","矢","艹","心","予","卯","斤","貝","山","甲","𧾷","八","亻","歹","刂","門","王","石","古","周","隹","朔","土","㇀","田","ㄦ","ㄙ","龜","火","罒","勹","虫","戈","府","肉","糹","言","弓","冫","水","阝","市","虍","胃","黍","占","夜","呆","士","寸","ㄇ","攴","夂","丰","辶","𤣩","求","上","小","魚","白","卵","二","人","帚","也","因","幸","卩","分","皿","直","宀","十","見","、","日","共","氺","生","皮","品","乛","工","口","菐","車"];
 			
 			let tot_buttons = 12;
-			let random_options = allOptions.filter(x=>!data.parts.includes(x)).sort(() => Math.random() - 0.5).slice(0,tot_buttons-data.parts.length);
-			let show_options = [...random_options, ...data.parts].sort(() => Math.random() - 0.5);
+			
+			const uniqueParts = [...new Set(data.parts)];
+			let random_options = allOptions.filter(x => !uniqueParts.includes(x)).sort(() => Math.random() - 0.5).slice(0, tot_buttons - uniqueParts.length);
+			let show_options = [...new Set([...random_options, ...uniqueParts])].sort(() => Math.random() - 0.5);
+			
 
             show_options.forEach(p => {
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
                 btn.innerText = p;
-                // 改為呼叫 addPart，且不傳送按鈕 DOM 以免進行外觀回饋
                 btn.onclick = () => addPart(p);
                 optionsDiv.appendChild(btn);
             });
 
-            // 更新上方進度條
             let progressPercent = (currentIdx / quizData.length) * 100;
             document.getElementById('game-progress').style.width = progressPercent + '%';
         }
 
 
-// 渲染 `#display-area` 內的格子
+
+// 渲染星星進度
+        function renderStars(count) {
+            const starArea = document.getElementById('star-area');
+            let starsHTML = "";
+            for (let i = 1; i <= 5; i++) {
+                if (i <= count) {
+                    starsHTML += "⭐";
+                } else {
+                    starsHTML += "★"; // 空心星
+                }
+            }
+            starArea.innerHTML = starsHTML;
+        }
+
+        // 渲染格子
         function renderSlots() {
             const displayArea = document.getElementById('display-area');
             displayArea.innerHTML = "";
@@ -209,45 +353,40 @@
                 const slot = document.createElement('div');
                 if (part === "") {
                     slot.className = 'component-slot';
-                    slot.innerText = "？"; // 空格子顯示問號提示
+                    slot.innerText = "？";
                 } else {
                     slot.className = 'component-slot filled';
                     slot.innerText = part;
-                    // 如果格子有部件，點擊則觸發刪除
                     slot.onclick = () => removePart(index);
                 }
                 displayArea.appendChild(slot);
             });
         }
 
-        // 點擊部件按鈕：將部件填入第一個找到的空位
         function addPart(p) {
             const emptyIndex = userAnswers.indexOf("");
             if (emptyIndex !== -1) {
                 userAnswers[emptyIndex] = p;
                 renderSlots();
-                document.getElementById('message').innerText = ""; // 清除先前的錯誤訊息
+                document.getElementById('message').innerText = "";
             }
         }
 
-        // 點擊顯示區格子：刪除該格子的部件
         function removePart(index) {
             userAnswers[index] = "";
             renderSlots();
-            document.getElementById('message').innerText = ""; // 清除先前的錯誤訊息
+            document.getElementById('message').innerText = "";
         }
 
-        // 點擊「確定」按鈕：驗證答案
-        function submitAnswer() {
+        // 點擊「確定」：驗證答案
+        async function submitAnswer() {
             const data = quizData[currentIdx];
 
-            // 檢查是否還有格子沒填滿
             if (userAnswers.includes("")) {
                 document.getElementById('message').innerText = "請先把格子都填滿再檢查喔！🌱";
                 return;
             }
 
-            // 將使用者答案與標準答案各自排序後比對（不限輸入順序）
             const sortedUser = [...userAnswers].sort();
             const sortedTarget = [...data.parts].sort();
 
@@ -264,11 +403,25 @@
                 document.getElementById('next-btn').style.display = "inline-block";
                 document.getElementById('submit-btn').style.display = "none";
                 
-                // 更新進度條至完成當前關卡
+                // 功能1追加：驗證成功後，回填挖空的目標漢字並指定特殊樣式呈現
+                let reveal_word = data.vocab.map((v)=>{
+                    let isTarget = (v.text === data.word);
+                    let textSpan = isTarget ? `<span class="correct-fill-text">${v.text}</span>` : `<span>${v.text}</span>`;
+                    return '<ruby>' + textSpan + '<rt>'+v.bopomo+'</rt>'+'</ruby>';
+                }).join('');
+                document.getElementById('current-full-word').innerHTML = reveal_word;
+
+                // 功能2追加：更新 IndexedDB 進度次數 (+1)
+                const newCount = await updateWordCount(data.word, true);
+                renderStars(newCount); // 即時刷新星星外觀
+                
                 let progressPercent = ((currentIdx + 1) / quizData.length) * 100;
                 document.getElementById('game-progress').style.width = progressPercent + '%';
             } else {
                 document.getElementById('message').innerText = "再試試看喔，零件好像裝錯了！🧩";
+                // 功能2追加：答案錯誤，累計計次清零
+                const newCount = await updateWordCount(data.word, false);
+                renderStars(newCount);
             }
         }
 
@@ -277,8 +430,14 @@
             initLevel();
         }
 
-        // 啟動第一關
-        initLevel();
+        // 遊戲總啟動點
+        async function startGame() {
+            await initDB();              // 開啟資料庫
+            await generateQuizSession(); // 加權抽取 20 題
+            initLevel();                 // 載入第一關
+        }
+
+        startGame();
 		
 				
 
