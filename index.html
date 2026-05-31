@@ -130,6 +130,9 @@
 		div#display-area {
 			font-family: 部件;
 		}
+		span.result-parts {
+			font-family: 部件;
+		}
 		
 		
 		@font-face {
@@ -178,6 +181,29 @@
     </div>
 </div>
 
+<div class="modal fade" id="resultModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content text-center" style="border-radius: 20px; border: none;">
+            <div class="modal-header justify-content-center bg-success text-white" style="border-top-left-radius: 20px; border-top-right-radius: 20px;">
+                <h4 class="modal-title fw-bold" id="resultModalLabel">🌳 本輪守護成果報告 🌳</h4>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-4">
+                    <span class="text-secondary h5">您的守護成績</span>
+                    <h1 class="display-4 fw-bold text-success mt-2" id="score-text">0 / 0</h1>
+                </div>
+                <hr>
+                <h5 class="text-start fw-bold mb-3 text-secondary">📋 題目清單（錯誤優先排列）：</h5>
+                <div class="list-group text-start shadow-sm" id="result-list">
+                    </div>
+            </div>
+            <div class="modal-footer justify-content-center" style="border-top: none;">
+                <button type="button" class="btn btn-success btn-lg px-5 shadow" onclick="location.reload()">再玩一次 🔄</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -191,6 +217,8 @@
         let userAnswers = [];
         let db = null;
 		let isLevelAnswered = false;
+		// 用來儲存本輪每題答題狀況的歷史紀錄
+        let sessionHistory = [];
 
 		// 1. 初始化 IndexedDB
         function initDB() {
@@ -293,6 +321,7 @@
 
             quizData = selected;
             document.querySelector("#progress-tot").textContent = quizData.length;
+			sessionHistory = []; // 重設紀錄
         }
 
 		// 初始化關卡
@@ -415,7 +444,7 @@
                 }
             }
 			
-			// 調整 1：無論對錯，皆切換按鈕，答錯顯示紅字且計次清零
+			// 無論對錯，皆切換按鈕，答錯顯示紅字且計次清零
             document.getElementById('next-btn').style.display = "inline-block";
             document.getElementById('submit-btn').style.display = "none";
 
@@ -431,15 +460,16 @@
                 //document.getElementById('next-btn').style.display = "inline-block";
                 //document.getElementById('submit-btn').style.display = "none";
                 
-                // 功能1追加：驗證成功後，回填挖空的目標漢字並指定特殊樣式呈現
+                // 驗證成功後，回填挖空的目標漢字並指定特殊樣式呈現
                 let reveal_word = data.vocab.map((v)=>{
                     let isTarget = (v.text === data.word);
                     let textSpan = isTarget ? `<span class="correct-fill-text">${v.text}</span>` : `<span>${v.text}</span>`;
+					
                     return '<ruby>' + textSpan + '<rt>'+v.bopomo+'</rt>'+'</ruby>';
                 }).join('');
                 document.getElementById('current-full-word').innerHTML = reveal_word;
 
-                // 功能2追加：更新 IndexedDB 進度次數 (+1)
+                // 更新 IndexedDB 進度次數 (+1)
                 const newCount = await updateWordCount(data.word, true);
                 renderStars(newCount); // 即時刷新星星外觀
                 
@@ -478,15 +508,69 @@
                 }).join('');
                 document.getElementById('current-full-word').innerHTML = reveal_word;
 			
-                // 功能2追加：答案錯誤，累計計次清零
+                // 答案錯誤，累計計次清零
                 const newCount = await updateWordCount(data.word, false);
                 renderStars(newCount);
             }
+			
+			// 新增：將本題結果推入當前挑戰歷史紀錄
+            sessionHistory.push({
+                word: data.word,
+                parts: data.parts,
+                isCorrect: isCorrect
+            });
+			
         }
 
-        function nextLevel() {
+		function nextLevel() {
+            // 判斷是否已經完成了所有的題目 (例如 20 題)
+            if (sessionHistory.length >= quizData.length) {
+                showFinalResults();
+                return;
+            }
+
             currentIdx = (currentIdx + 1) % quizData.length;
             initLevel();
+        }
+
+		// 新增：生成並顯示結果 Modal
+        function showFinalResults() {
+            const totalQuestions = quizData.length;
+            const correctCount = sessionHistory.filter(item => item.isCorrect).length;
+
+            // 1. 填入得分資訊
+            document.getElementById('score-text').innerText = `${correctCount} / ${totalQuestions}`;
+
+            // 2. 將紀錄排序：錯誤的往前排 (false 代表 0，true 代表 1，0減1為負數，會排在前面)
+            let sortedHistory = [...sessionHistory].sort((a, b) => a.isCorrect - b.isCorrect);
+
+            // 3. 生成清單 HTML
+            const resultListEl = document.getElementById('result-list');
+            resultListEl.innerHTML = "";
+
+            sortedHistory.forEach(item => {
+                const listItem = document.createElement('div');
+                // 根據對錯給予不同的背景提示
+                listItem.className = `list-group-item d-flex justify-content-between align-items-center p-3 ${item.isCorrect ? 'list-group-item-success' : 'list-group-item-danger'}`;
+                
+                // 串接部件字串，格式如：部件1、部件2、...
+                const partsString = item.parts.join('、');
+
+                listItem.innerHTML = `
+                    <div>
+                        <span class="fs-1 fw-bold me-3 text-dark">${item.word}</span>
+                        <span class="text-muted fs-1 result-parts">= ${partsString}</span>
+                    </div>
+                    <span class="badge ${item.isCorrect ? 'bg-success' : 'bg-danger'} rounded-pill fs-6">
+                        ${item.isCorrect ? '✓ 正確' : '✗ 錯誤'}
+                    </span>
+                `;
+                resultListEl.appendChild(listItem);
+            });
+
+            // 4. 顯示 Bootstrap Modal 視窗
+            const resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+            resultModal.show();
         }
 
         // 遊戲總啟動點
