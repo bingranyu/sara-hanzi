@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>森林拆字守護者</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -16,21 +17,28 @@
 			font-family: "Microsoft JhengHei", sans-serif;
 			min-height: 100vh;
 			display: flex;
-			flex-direction: column; /* 確保內容由上而下排列 */
+			flex-direction: column; 
 			align-items: center;
-			justify-content: flex-start; /* 讓內容從頂部開始，而非置中 */
-			padding-top: 20px; /* 給頂部一點留白 */
+			justify-content: center; /* 【修改標記】改為置中，讓畫面在不同裝置上都能有和諧的上下配比 */
+			padding: 10px; /* 【修改標記】縮小四周襯距，避免小螢幕過度擠壓 */
+            margin: 0;
         }
 
+        /* 【修改標記】限制遊戲主卡片的最大高度與寬度，確保橫式螢幕（如iPad）不會穿出畫面 */
         .game-card {
             border: none;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-height: 85vh; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
+        /* 【修改標記】微調字寶寶展示框：將高度和文字大小改為響應式，在短螢幕下自動縮小 */
         .word-display-box {
-            font-size: clamp(3rem, 15vw, 5rem); /* 響應式字體大小 */
-            min-height: 140px;
+            font-size: clamp(2rem, 8vh, 4rem); 
+            min-height: clamp(80px, 12vh, 130px);
             border: 4px dashed #a5d6a7;
             border-radius: 15px;
             display: flex;
@@ -40,10 +48,12 @@
             background-color: #f9fdf9;
         }
 
+        /* 【修改標記】重構選項按鈕樣式：加入 flex-grow 與更彈性的寬高，手機大拇指更好點擊，橫屏自動適應 */
         .option-btn {
-            font: 1.8rem 部件;
-            width: 70px;
-            height: 70px;
+            font: clamp(1.4rem, 4vh, 1.8rem) 部件;
+            min-width: 65px;
+            height: clamp(55px, 8vh, 70px);
+            flex: 1 1 calc(16% - 10px); /* 在大螢幕排成一列多個，手機上自動撐開 */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -67,8 +77,9 @@
         }
 
         #message {
-            height: 32px;
+            height: 24px;
             font-weight: bold;
+            font-size: clamp(0.9rem, 2.5vh, 1.2rem); /* 【修改標記】動態字體大小 */
         }
 
         .progress {
@@ -120,7 +131,7 @@
 
         /* 星星標籤樣式 */
         .star-badge {
-            font-size: 1.8rem;
+            font-size: clamp(1.2rem, 3vh, 1.8rem); /* 【修改標記】隨視窗高度縮放 */
             color: #ffb300;
             letter-spacing: 2px;
             display: block;
@@ -134,40 +145,75 @@
 			font-family: 部件;
 		}
 		
-		
 		@font-face {
 			font-family: "Bopomofo";
 			src: url("font/bopomofo.woff2") format("woff2"), url("font/bopomofo.woff") format("woff");
 		}
+
+        /* 【修改標記】針對智慧型手機（直式直向螢幕）的專屬精細優化 */
+        @media (max-width: 576px) {
+            body {
+                justify-content: flex-start; /* 手機頂部對齊 */
+                padding: 8px;
+            }
+            h1 { font-size: 1.5rem !important; margin-bottom: 2px !important; }
+            p.text-muted { font-size: 0.85rem !important; margin-bottom: 10px !important; }
+            
+            .game-card {
+                padding: 15px !important;
+                max-height: none; /* 手機允許自由向下延伸 */
+            }
+            .target-word-title {
+                font-size: 2.2rem !important; /* 大幅縮小手機上「目標國字：」這五個字的霸道佔位 */
+            }
+            .option-btn {
+                flex: 1 1 calc(25% - 8px); /* 手機上按鈕自動排成一列 4 個，並且撐滿，按鍵變大超好按 */
+                min-width: 60px;
+                height: 60px;
+            }
+            .d-flex.flex-wrap {
+                gap: 8px !important; /* 縮小按鈕之間的間距，騰出更多空間 */
+            }
+        }
+
+        /* 【修改標記】針對短螢幕裝置（例如 iPad 橫放、低解析度筆電螢幕）的專屬高度優化 */
+        @media (max-height: 768px) and (min-width: 577px) {
+            h1 { font-size: 1.8rem !important; margin-bottom: 2px !important; }
+            p.text-muted { display: none; } /* 橫向空間寶貴，直接隱藏副標題提示語 */
+            .target-word-title { font-size: 2.5rem !important; margin-bottom: 5px !important; }
+            .word-display-box { mb-3 !important; }
+            .game-card { padding: 20px !important; }
+        }
     </style>
 </head>
 <body>
-<div class="container-fluid py-4">
+<div class="container-xl w-100">
     <div class="row justify-content-center">
-        <div class="col-12 col-md-10 col-lg-7 text-center">
+        <div class="col-12 col-sm-11 col-md-9 col-lg-7 text-center">
             
-            <h1 class="fw-bold mb-2" style="color: var(--forest-green);">森林拆字守護者 🌳</h1>
-            <p class="text-muted mb-4">點擊正確的部件，幫「字寶寶」找回它的零件吧！</p>
+            <h1 class="fw-bold mb-1" style="color: var(--forest-green);">森林拆字守護者 🌳</h1>
+            <p class="text-muted mb-2">點擊正確的部件，幫「字寶寶」找回它的零件吧！</p>
 
-            <div class="card game-card p-3 p-md-5">
-                <div class="progress mb-3">
-                    <div id="game-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+            <div class="card game-card p-3 p-sm-4 shadow">
+                <div>
+                    <div class="progress mb-2">
+                        <div id="game-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div id="star-area" class="star-badge"></div>
                 </div>
 
-                <div id="star-area" class="star-badge"></div>
-
-                <div class="mb-2 text-secondary fw-bold"  style="font-size: 5rem;">
+                <div class="mb-2 text-secondary fw-bold target-word-title" style="font-size: clamp(2.2rem, 6vh, 3.5rem);">
                     目標國字：<span id="current-full-word" class="text-dark">?</span>
                 </div>
 
-                <div class="word-display-box mb-4 shadow-sm" id="display-area"></div>
+                <div class="word-display-box mb-3 shadow-sm" id="display-area"></div>
                 
-                <div id="message" class="mb-3 text-success"></div>
+                <div id="message" class="mb-2 text-success"></div>
 
-                <div class="d-flex flex-wrap justify-content-center gap-3 mb-4" id="options"></div>
+                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3" id="options"></div>
 
-                <div class="d-grid gap-2 col-8 col-md-6 mx-auto">
-                    <button id="submit-btn" class="btn btn-primary btn-lg shadow mb-2" onclick="submitAnswer()">
+                <div class="d-grid gap-2 col-10 col-sm-8 mx-auto">
+                    <button id="submit-btn" class="btn btn-primary btn-lg shadow mb-1" onclick="submitAnswer()">
                         確定 🔍
                     </button>
                     <button id="next-btn" class="btn btn-success btn-lg shadow" onclick="nextLevel()" style="display: none;">
@@ -176,7 +222,7 @@
                 </div>
             </div>
 
-            <p class="mt-4 text-secondary small">本輪練習進度：<span id="progress-text">0</span>/<span id="progress-tot">0</span></p>
+            <p class="mt-2 mb-0 text-secondary small">本輪練習進度：<span id="progress-text">0</span>/<span id="progress-tot">0</span></p>
         </div>
     </div>
 </div>
@@ -556,10 +602,10 @@
                 // 串接部件字串，格式如：部件1、部件2、...
                 const partsString = item.parts.join('、');
 
-                listItem.innerHTML = `
+				listItem.innerHTML = `
                     <div>
-                        <span class="fs-1 fw-bold me-3 text-dark">${item.word}</span>
-                        <span class="text-muted fs-1 result-parts">= ${partsString}</span>
+                        <span class="fs-3 fw-bold me-3 text-dark">${item.word}</span>
+                        <span class="text-muted fs-4 result-parts">= ${partsString}</span>
                     </div>
                     <span class="badge ${item.isCorrect ? 'bg-success' : 'bg-danger'} rounded-pill fs-6">
                         ${item.isCorrect ? '✓ 正確' : '✗ 錯誤'}
