@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G2PW Web Worker 推理測試</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background-color: #f5f7f9;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        h1 { color: #2c3e50; margin-top: 0; }
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            background-color: #e8f4fd;
+            color: #1d6fa5;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        pre {
+            background: #2d3748;
+            color: #f7fafc;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: "Fira Code", Consolas, Monaco, monospace;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>G2PW 瀏覽器端推論測試 (Worker 版)</h1>
+    <div id="status" class="status">環境已就緒。請點擊按鈕 1 載入模型。</div>
+    
+    <button id="btn-init" onclick="handleInit()">1. 初始化並載入模型</button>
+    <button id="btn-run" onclick="handleInference()" disabled>2. 執行多音字消歧推論</button>
+
+    <h3>主控台輸出日誌：</h3>
+    <pre id="log">點擊上方按鈕開始...</pre>
+</div>
+
+<script>
+    // ========================================================
+    // 類別封裝：G2PW 開發者介面組件
+    // ========================================================
+    class G2PWClient {
+        constructor(workerScriptPath = './g2pw.worker.js') {
+            this.worker = new Worker(workerScriptPath, { type: 'module' });
+            this.callbacks = new Map();
+            this.msgIdCounter = 0;
+
+            // 處理從 Worker 回傳的所有消息
+            this.worker.onmessage = (e) => {
+                const { type, result, error, msgId } = e.data;
+                if (!this.callbacks.has(msgId)) return;
+
+                const { resolve, reject } = this.callbacks.get(msgId);
+                this.callbacks.delete(msgId); // 釋放記憶體
+
+                if (type === 'INIT_SUCCESS') resolve({ status: 'success', message: '模型初始化成功' });
+                else if (type === 'INIT_FAIL') reject(new Error(error));
+                else if (type === 'INFERENCE_SUCCESS') resolve(result);
+                else if (type === 'INFERENCE_FAIL') reject(new Error(error));
+            };
+        }
+
+        // 接口 1: 初始化並載入模型 (回傳 Promise，支援 async/await 與 callback)
+        async initModel(callback = null) {
+            const msgId = this.msgIdCounter++;
+            return new Promise((resolve, reject) => {
+                this.callbacks.set(msgId, {
+                    resolve: (res) => {
+                        if (callback) callback(null, res);
+                        resolve(res);
+                    },
+                    reject: (err) => {
+                        if (callback) callback(err, null);
+                        reject(err);
+                    }
+                });
+                this.worker.postMessage({ type: 'INIT', msgId });
+            });
+        }
+
+        // 接口 2: 輸入字串陣列，回傳注音符號陣列
+        async getBopomofo(sentences) {
+            if (!Array.isArray(sentences)) {
+                throw new Error("輸入格式錯誤，必須為字串組成的 Array");
+            }
+            const msgId = this.msgIdCounter++;
+            return new Promise((resolve, reject) => {
+                this.callbacks.set(msgId, { resolve, reject });
+                this.worker.postMessage({ type: 'INFERENCE', data: sentences, msgId });
+            });
+        }
+    }
+
+    // ========================================================
+    // UI 互動與驗證邏輯
+    // ========================================================
+    const g2pw = new G2PWClient();
+
+    function log(msg) {
+        const logger = document.getElementById('log');
+        logger.innerText += '\n' + msg;
+        console.log(msg);
+    }
+
+    function updateStatus(msg) {
+        document.getElementById('status').innerText = msg;
+    }
+
+    // 處理：點擊初始化模型
+    async function handleInit() {
+        try {
+            document.getElementById('btn-init').disabled = true;
+            updateStatus("正在 Worker 內下載/載入模型與配置（主執行緒完全不卡頓）...");
+            log("開始向 Worker 發送初始化請求...");
+
+            // 使用介面 1：傳入常規的完成後 callback 回呼函式
+            await g2pw.initModel((err, res) => {
+                if (err) {
+                    log(`❌ Callback 捕獲錯誤: ${err.message}`);
+                } else {
+                    log(`🎉 Callback 收到通知: ${res.message}`);
+                }
+            });
+
+            log("ONNX 模型與字典檔全部於 Worker 載入成功！");
+            updateStatus("模型載入就緒！可以開始推論。");
+            document.getElementById('btn-run').disabled = false;
+        } catch (error) {
+            log("❌ 初始化失敗: " + error.message);
+            updateStatus("初始化失敗，請檢查主控台。");
+            document.getElementById('btn-init').disabled = false;
+        }
+    }
+
+    // 處理：點擊執行多音字消歧
+    async function handleInference() {
+        try {
+            log("\n--- 開始處理輸入資料 ---");
+            const testInput = ["重新來過", "重新來過"];
+            log(`測試輸入: ${JSON.stringify(testInput)}`);
+            log("🚀 送入 Worker 進行異步排程推理中...");
+
+            // 使用介面 2：直接非同步獲取預測結果的注音陣列
+            const bopomofoArray = await g2pw.getBopomofo(testInput);
+
+            log("🎉 推理成功！最終注音 Array 結果：");
+            log(JSON.stringify(bopomofoArray, null, 2));
+        } catch (error) {
+            log("❌ 推理錯誤: " + error.message);
+        }
+    }
+</script>
+</body>
+</html>
