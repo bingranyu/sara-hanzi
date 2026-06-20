@@ -65,9 +65,9 @@
 
 <script>
     // ========================================================
-    // 類別封裝：G2PW 開發者介面組件
+    // 類別封裝：WS 開發者介面組件
     // ========================================================
-    class G2PWClient {
+    class WSClient {
         constructor(workerScriptPath = './ws.worker.js') {
             this.worker = new Worker(workerScriptPath, { type: 'module' });
             this.callbacks = new Map();
@@ -107,7 +107,7 @@
             });
         }
 
-        // 接口 2: 輸入字串陣列，回傳注音符號陣列
+        // 接口 2: 輸入字串陣列，回傳斷詞陣列
         async getBopomofo(sentences) {
             if (!Array.isArray(sentences)) {
                 throw new Error("輸入格式錯誤，必須為字串組成的 Array");
@@ -123,7 +123,7 @@
     // ========================================================
     // UI 互動與驗證邏輯
     // ========================================================
-    const g2pw = new G2PWClient();
+    const ws = new WSClient();
 
     function log(msg) {
         const logger = document.getElementById('log');
@@ -143,7 +143,7 @@
             log("開始向 Worker 發送初始化請求...");
 
             // 使用介面 1：傳入常規的完成後 callback 回呼函式
-            await g2pw.initModel((err, res) => {
+            await ws.initModel((err, res) => {
                 if (err) {
                     log(`❌ Callback 捕獲錯誤: ${err.message}`);
                 } else {
@@ -170,10 +170,10 @@
             log("🚀 送入 Worker 進行異步排程推理中...");
 
             // 使用介面 2：直接非同步獲取預測結果的注音陣列
-            const bopomofoArray = await g2pw.getBopomofo(testInput);
+            const wsArray = await ws.getBopomofo(testInput);
 
             log("🎉 推理成功！最終注音 Array 結果：");
-            log(JSON.stringify(bopomofoArray, null, 2));
+            log(JSON.stringify(wsArray, null, 2));
         } catch (error) {
             log("❌ 推理錯誤: " + error.message);
         }

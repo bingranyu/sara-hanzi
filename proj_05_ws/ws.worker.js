@@ -1,4 +1,4 @@
-// g2pw.worker.js
+// ws.worker.js
 import { AutoTokenizer, AutoModel, Tensor, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
 
 // 關閉遠端下載，指定從 Worker 所在目錄尋找模型
@@ -29,9 +29,8 @@ self.onmessage = async function(e) {
 
     if (type === 'INFERENCE') {
         try {
-            const sentences = data; // 預期為字串陣列，例如 ["重新來過", "重新來過"]
-            const results = await runInference(sentences);
-            
+            const sentences = data; // 預期為字串陣列，例如 ["台北天氣如何?", "今天是晴天"]
+            const results = await runInference(sentences);            
             self.postMessage({ type: 'INFERENCE_SUCCESS', result: results, msgId });
         } catch (error) {
             self.postMessage({ type: 'INFERENCE_FAIL', error: error.message, msgId });
@@ -71,7 +70,7 @@ function decodeBIOSegmentation(allTokens, outputData) {
             const scoreI = data[baseIndex + 1];
             const predTag = scoreB >= scoreI ? 'B' : 'I';
 
-            // 4. 依照 Python 邏輯進行斷詞拼湊
+            // 4. 進行斷詞拼湊
             if (predTag === 'B' && word !== "") {
                 res.append ? res.push(word) : res.push(word); // JS 使用 push
                 word = t;
@@ -129,40 +128,6 @@ async function runInference(sentences) {
     
     // 執行 ONNX 推論
     const outputs = await model(onnxInputs);
-    //const probsData = outputs.probs.data;
-    //const numLabels = metaData.labels.length;
-    //const preds = [];
-
-/*
-    // 後處理 Argmax
-    for (let b = 0; b < batchSize; b++) {
-        let maxVal = -1;
-        let maxIdx = 0;
-        for (let l = 0; l < numLabels; l++) {
-            const val = probsData[b * numLabels + l];
-            if (val > maxVal) {
-                maxVal = val;
-                maxIdx = l;
-            }
-        }
-        preds.push(metaData.labels[maxIdx]);
-    }
-
-*/
-// 1. 將包含 Tensor 的 outputs 物件處理成純 JS 物件
-const readableOutputs = {};
-
-for (const [key, tensor] of Object.entries(outputs)) {
-    readableOutputs[key] = {
-        dims: tensor.dims, // 取得資料形狀，例如 [1, 512, 768]
-        // 關鍵：將 TypedArray (如 Float32Array/BigInt64Array) 轉為一般陣列
-        // 若含有 BigInt 數據，後面 JSON.stringify 會報錯，需順便轉成數字或字串
-        data: Array.from(tensor.data, val => typeof val === 'bigint' ? val.toString() : val)
-    };
-}
-
-// 2. 成功轉換為 String (可安全用於 log、儲存或傳輸)
-    const outputString = JSON.stringify(readableOutputs, null, 2);
 
     let tokens = [];
     for (let idx = 0; idx < batchSize; idx++) {
