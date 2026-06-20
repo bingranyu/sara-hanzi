@@ -68,13 +68,14 @@
     // 類別封裝：G2PW 開發者介面組件
     // ========================================================
     class G2PWClient {
-        constructor(workerScriptPath = './g2pw.worker.js') {
+        constructor(workerScriptPath = './ws.worker.js') {
             this.worker = new Worker(workerScriptPath, { type: 'module' });
             this.callbacks = new Map();
             this.msgIdCounter = 0;
 
             // 處理從 Worker 回傳的所有消息
             this.worker.onmessage = (e) => {
+                console.log(e);
                 const { type, result, error, msgId } = e.data;
                 if (!this.callbacks.has(msgId)) return;
 
@@ -164,7 +165,7 @@
     async function handleInference() {
         try {
             log("\n--- 開始處理輸入資料 ---");
-            const testInput = ["重新來過", "重新來過"];
+            const testInput = ["台北天氣如何?", "今天是晴天"];
             log(`測試輸入: ${JSON.stringify(testInput)}`);
             log("🚀 送入 Worker 進行異步排程推理中...");
 
