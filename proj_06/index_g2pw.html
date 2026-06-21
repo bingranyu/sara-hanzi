@@ -68,7 +68,7 @@
     // 類別封裝：G2PW 開發者介面組件
     // ========================================================
     class G2PWClient {
-        constructor(workerScriptPath = './g2pw.worker.js') {
+        constructor(workerScriptPath = './model/g2pw.worker.js') {
             this.worker = new Worker(workerScriptPath, { type: 'module' });
             this.callbacks = new Map();
             this.msgIdCounter = 0;

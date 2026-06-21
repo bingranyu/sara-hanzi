@@ -38,50 +38,78 @@ self.onmessage = async function(e) {
     }
 };
 
-function decodeBIOSegmentation(allTokens, outputData) {
+function decodeBIOSegmentation(allTokens, outputData, originalTexts) {
     const { dims, data } = outputData.logits;
     const [batchSize, seqLen, numClasses] = dims;
     
-    const labelMap = { 0: 'B', 1: 'I' };
     const finalResult = [];
 
     // 依序處理每一筆 Batch 資料
     for (let b = 0; b < batchSize; b++) {
-        const tokens = allTokens[b]; // 取得該句子的所有 Tokens (例如: ["[CLS]", "台", "北", ...])
+        const tokens = allTokens[b]; // 取得該句子的所有 Tokens
+        const originalText = originalTexts[b]; // 取得未經過 toLowerCase 的原始字串
         const res = [];
-        let word = "";
+        
+        let origIdx = 0; // 用來追蹤原始字串位置的指標
+        let currentWord = "";
 
-        // 遍歷該句子的每個序列位置 (最高不超過陣列長度與 seqLen 的最小值)
+        // 遍歷該句子的每個序列位置
         const currentSeqLen = Math.min(seqLen, tokens.length);
         for (let i = 0; i < currentSeqLen; i++) {
             let t = tokens[i];
 
-            // 1. 跳過特殊符號
+            // 跳過特殊符號
             if (['[CLS]', '[SEP]', '[PAD]'].includes(t)) {
                 continue;
             }
 
-            // 2. 還原 BERT 可能產生的子詞字首符號 (如 ##北 變成 北)
+            // 還原子詞字首符號
             t = t.replace(/^##/, "");
 
-            // 3. 計算當前位置在 1D 陣列中的 Argmax 標籤
+            // 計算當前位置的預測標籤 (B 或 I)
             const baseIndex = (b * seqLen * numClasses) + (i * numClasses);
             const scoreB = data[baseIndex];
             const scoreI = data[baseIndex + 1];
             const predTag = scoreB >= scoreI ? 'B' : 'I';
 
-            // 4. 進行斷詞拼湊
-            if (predTag === 'B' && word !== "") {
-                res.append ? res.push(word) : res.push(word); // JS 使用 push
-                word = t;
+            // 根據 Token 的長度，從原始字串中「依序」取出對應長度的字元（包含原本的大寫、空格）
+            let matchedStr = "";
+            let tIdx = 0;
+            
+            // Tokenizer 有時會把空格變成特殊的 ' ' 或直接吃掉
+            // 我們必須把原始字串中對應的字元抓出來
+            while (tIdx < t.length && origIdx < originalText.length) {
+                const origChar = originalText[origIdx];
+                
+                // 如果 Token 當前不是空格，但原始文字是空格，代表 Tokenizer 忽略了這個空格
+                // 我們要把這個空格吞進來，算在當前詞彙裡
+                if (t[tIdx] !== ' ' && (origChar === ' ' || origChar === '\xa0')) {
+                    matchedStr += origChar;
+                    origIdx++;
+                    continue; 
+                }
+                
+                matchedStr += origChar;
+                origIdx++;
+                tIdx++;
+            }
+
+            // 進行斷詞拼湊
+            if (predTag === 'B' && currentWord !== "") {
+                res.push(currentWord);
+                currentWord = matchedStr;
             } else {
-                word += t;
+                currentWord += matchedStr;
             }
         }
 
-        // 補上最後一個未完結的詞
-        if (word) {
-            res.push(word);
+        // 補上最後一個未完結的詞，並順便把原始字串後面可能剩餘的空格或符號補上
+        if (origIdx < originalText.length) {
+            currentWord += originalText.slice(origIdx);
+        }
+
+        if (currentWord) {
+            res.push(currentWord);
         }
 
         finalResult.push(res);
@@ -94,7 +122,7 @@ function decodeBIOSegmentation(allTokens, outputData) {
 
 // 核心推論邏輯
 async function runInference(sentences) {
-	let texts = sentences;
+    let texts = sentences; // 保留原始未變更大小寫的陣列
     const batchSize = texts.length;
 
     let allInputIds = [];
@@ -102,6 +130,7 @@ async function runInference(sentences) {
     let allMaskIds = [];
 
     for (let idx = 0; idx < batchSize; idx++) {
+        // 推論時用小寫餵給 Tokenizer
         const text = texts[idx].toLowerCase();  
 
         // 呼叫 Transformers.js Tokenizer
@@ -131,11 +160,12 @@ async function runInference(sentences) {
 
     let tokens = [];
     for (let idx = 0; idx < batchSize; idx++) {
-    	let token = tokenizer.model.convert_ids_to_tokens(allInputIds[idx]);
-    	tokens.push(token);
+        let token = tokenizer.model.convert_ids_to_tokens(allInputIds[idx]);
+        tokens.push(token);
     }
     
-    let result = decodeBIOSegmentation(tokens,outputs)
+    // 傳入第三個參數 texts (原始字串陣列) 進行解碼
+    let result = decodeBIOSegmentation(tokens, outputs, texts);
 
     return result;
 }

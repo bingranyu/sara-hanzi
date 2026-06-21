@@ -1,0 +1,421 @@
+/* --- 1. CSS 變數與基礎設定 (最佳實踐：方便切換主題與維護) --- */
+:root {
+    --bg-color: #FAF8F5; /* 暖米色，護眼實體書質感 */
+    --text-color: #333333;
+    --primary-color: #6BCAA2; /* 溫和粉綠 */
+    --primary-hover: #58A887;
+    --highlight-color: #FFF2B2; /* 柔和反黃色 */
+    --card-bg: #FFFFFF;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    
+    /* 字體設定：優先使用系統預設的無襯線字體，保護兒童視力 */
+    --font-main: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent; /* 移除手機點擊閃爍 */
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    overflow: hidden; /* 防止整個網頁亂滾動，只允許內部區域滾動 */
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+/* --- 2. SPA 視圖切換動畫 (核心 UI 切換機制) --- */
+.view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s;
+    background-color: var(--bg-color);
+    overflow-y: auto;
+}
+
+.view.active {
+    opacity: 1;
+    visibility: visible;
+    z-index: 10;
+}
+
+/* --- 3. 共用 UI 元件 --- */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s, background-color 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.btn-primary:active { transform: scale(0.95); }
+.btn-primary.small { padding: 8px 16px; font-size: 1rem; }
+
+.btn-icon {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--bg-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* --- 4. 畫面 1：歡迎區 --- */
+.welcome-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: var(--spacing-lg);
+    gap: var(--spacing-lg);
+}
+.mascot-placeholder { font-size: 5rem; animation: bounce 2s infinite ease-in-out; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+/* --- 5. 畫面 2：書架區 (Scroll Snap 最佳實踐) --- */
+.bookshelf-main { padding: 0 var(--spacing-lg); }
+.horizontal-scroll {
+    display: flex;
+    gap: var(--spacing-lg);
+    overflow-x: auto;
+    padding: var(--spacing-md) 0;
+    scroll-snap-type: x mandatory; /* 讓滑動像 App 一樣停在卡片上 */
+    scrollbar-width: none; /* 隱藏卷軸 */
+}
+.horizontal-scroll::-webkit-scrollbar { display: none; }
+.book-card {
+    flex: 0 0 80%; /* 手機版佔 80% 寬度 */
+    max-width: 300px; /* PC 版最大寬度 */
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: var(--spacing-md);
+    scroll-snap-align: center;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.book-card:hover { transform: translateY(-5px); }
+.book-cover { height: 200px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 4rem; }
+.mock-cover-1 { background: #FFD1D1; }
+.mock-cover-2 { background: #D1E8FF; }
+.book-info { margin-top: var(--spacing-md); display: flex; flex-direction: column; gap: 8px; }
+.tag { background: #EEE; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem; width: fit-content; }
+
+/* --- 6. 畫面 3：閱讀舞台 (文字與排版核心) --- */
+.reader-theatre {
+    padding: var(--spacing-lg);
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+.sentence {
+    font-size: 28px; /* 適合兒童的大字體 */
+    line-height: 2.2; /* 極寬的行距，防跳行 */
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 12px;
+    color: rgba(51, 51, 51, 0.5); /* 預設淡化 */
+    transition: background-color 0.3s, color 0.3s;
+    position: relative;
+    cursor: pointer;
+}
+.sentence.active-sentence {
+    color: var(--text-color);
+}
+.word {
+    display: inline-block;
+    margin-right: 0.3em; /* 模擬斷詞微空格 */
+    position: relative;
+}
+.zhuyin {
+    position: absolute;
+    top: -1.2em;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: #4A90E2;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.zhuyin.mock-show { opacity: 1; }
+.btn-ask-parents {
+    background: none;
+    border: none;
+    font-size: 24px;
+    margin-left: 8px;
+    opacity: 0.3;
+    cursor: pointer;
+}
+.active-sentence .btn-ask-parents { opacity: 1; }
+
+/* --- 7. 畫面 4：家長區 --- */
+.parents-dashboard { padding: var(--spacing-lg); max-width: 600px; margin: 0 auto; }
+.dashboard-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-lg); }
+.stat-card { background: var(--card-bg); padding: var(--spacing-md); border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; }
+.stat-card .number { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); margin-top: 8px; }
+.question-item { background: var(--card-bg); padding: var(--spacing-md); border-radius: 12px; margin-bottom: var(--spacing-md); border-left: 4px solid #FFA500; }
+.q-source { font-size: 0.8rem; color: #888; margin-bottom: 8px; }
+.q-text mark { background-color: var(--highlight-color); padding: 0 4px; border-radius: 4px; }
+
+/* --- 響應式微調 (平板與 PC) --- */
+@media (min-width: 768px) {
+    .sentence { font-size: 36px; }
+    .book-card { flex: 0 0 300px; }
+    .horizontal-scroll { justify-content: center; } /* PC 螢幕大時卡片置中 */
+}
+
+/* --- 興趣選擇器專屬樣式 --- */
+.tag-picker-main {
+    padding: var(--spacing-lg);
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+.tag-picker-subtitle {
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: var(--spacing-md);
+}
+.tag-grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 雙排大圖形按鈕，極適合兒童手指點擊 */
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+.tag-pick-item {
+    background: var(--card-bg);
+    border: 3px solid #E0E0E0;
+    padding: var(--spacing-lg) var(--spacing-md);
+    border-radius: 24px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+/* 點選時的溫和粉綠滿版回饋 */
+.tag-pick-item.selected {
+    background-color: var(--primary-color);
+    border-color: var(--primary-hover);
+    color: white;
+    transform: scale(1.03);
+    box-shadow: 0 6px 12px rgba(107, 202, 162, 0.3);
+}
+/* 送出按鈕防呆與置底 */
+.action-bar {
+    margin-top: auto;
+    padding: var(--spacing-md) 0;
+}
+.btn-primary.disabled {
+    background-color: #D5D5D5;
+    color: #888;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none !important;
+}
+.btn-icon-sub {
+    background: #E8E8E8;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-left: 10px;
+}
+.card-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.empty-hint {
+    color: #888;
+    padding: var(--spacing-lg);
+    text-align: center;
+    width: 100%;
+}
+@media (min-width: 480px) {
+    .tag-grid-container { grid-template-columns: repeat(3, 1fr); } /* 寬版改三排 */
+}
+
+/* --- 核心注音與鷹架排版微調 --- */
+.reader-article-title {
+    font-size: 2.2rem;
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-color);
+}
+
+/* 原生 ruby 與 rt 排版修正 */
+ruby {
+    ruby-position: over;
+    ruby-align: center;
+}
+
+rt {
+    font-size: 13px;
+    color: #4A90E2;
+    font-weight: normal;
+    visibility: hidden; /* 預設隱藏注音（隱形鷹架） */
+    opacity: 0;
+    transition: opacity 0.3s ease, visibility 0.3s;
+    user-select: none;
+}
+
+/* 點擊單字後，展開鷹架顯示注音 */
+.word ruby.show-scaffold rt {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 判定為魔王詞時的強調樣式（例如加深注音顏色或底線） */
+.word ruby.boss-word rt {
+    visibility: visible;
+    opacity: 1;
+    color: #E35B5B; /* 溫和的紅色標註 */
+}
+.word ruby.boss-word {
+    border-bottom: 2px dashed #E35B5B;
+}
+
+/* 標點符號不予空格擴張 */
+.word.punctuation {
+    cursor: pointer;
+}
+
+/* 載入中動畫盒子 */
+.loading-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-size: 1.5rem;
+    color: #888;
+}
+
+/* --- 讀後挑戰題目區 UI 樣式 --- */
+.quiz-section {
+    margin-top: 40px;
+    padding-top: var(--spacing-lg);
+    border-top: 4px dashed #E0DCD5;
+}
+.quiz-section-title {
+    text-align: center;
+    font-size: 1.5rem;
+    color: #E69138;
+    margin-bottom: var(--spacing-lg);
+}
+.quiz-item-box {
+    background: var(--card-bg);
+    padding: var(--spacing-md);
+    border-radius: 20px;
+    margin-bottom: var(--spacing-md);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+.quiz-question-text {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-color);
+}
+.quiz-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+.quiz-opt-btn {
+    background: #F5F5F5;
+    border: 2px solid #EAEAEA;
+    padding: var(--spacing-md);
+    border-radius: 16px;
+    font-size: 1.1rem;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+}
+.quiz-opt-btn .opt-emoji {
+    font-size: 1.5rem;
+}
+
+/* 答題回饋：正確綠色，錯誤灰色淡出（無挫折導引） */
+.quiz-opt-btn.correct {
+    background-color: #E2F5ED;
+    border-color: var(--primary-color);
+    color: var(--primary-hover);
+}
+.quiz-opt-btn.wrong {
+    background-color: #F0F0F0;
+    border-color: #DDD;
+    color: #AAA;
+    opacity: 0.6;
+}
+
+/* 星星按鈕點擊後的標記狀態 */
+.btn-ask-parents.marked {
+    color: #FFC107;
+    text-shadow: 0 0 8px rgba(255, 193, 7, 0.6);
+}
+
+/* --- 注音控制 --- */
+/* 預設情況下，不論句子有沒有反黃，注音（rt）一律徹底隱藏 */
+.sentence-block ruby rt {
+    visibility: hidden;
+    opacity: 0;
+}
+
+/* 當句子被點擊反黃時的底色 */
+.sentence-block.show-scaffold {
+    background-color: #fff2a8; /* 粉嫩黃色 */
+}
+
+/* 當句子反黃時，裡面的注音才顯示出來 */
+.sentence-block.show-scaffold ruby rt {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 只有當特定的詞被點擊、加上 .show-bopomo 類別時，它的注音才會單獨顯現 */
+.sentence-block .word-item.show-bopomo ruby rt {
+    visibility: visible;
+    opacity: 1;
+}

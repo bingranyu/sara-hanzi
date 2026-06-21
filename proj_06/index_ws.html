@@ -68,7 +68,7 @@
     // 類別封裝：WS 開發者介面組件
     // ========================================================
     class WSClient {
-        constructor(workerScriptPath = './ws.worker.js') {
+        constructor(workerScriptPath = './model/ws.worker.js') {
             this.worker = new Worker(workerScriptPath, { type: 'module' });
             this.callbacks = new Map();
             this.msgIdCounter = 0;

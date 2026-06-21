@@ -16,14 +16,14 @@ self.onmessage = async function(e) {
 
     if (type === 'INIT') {
         try {
-            // 1. 載入元數據 (metainfo.json)
-            const response = await fetch('./metainfo.json');
-            metaData = await response.json();
-
-            // 2. 載入 Tokenizer 與 ONNX 模型
+            // 1. 載入 Tokenizer 與 ONNX 模型
             const modelPath = './g2pw_model_onnx'; 
             tokenizer = await AutoTokenizer.from_pretrained(modelPath);
             model = await AutoModel.from_pretrained(modelPath);
+			
+            // 2. 載入元數據 (metainfo.json)
+            const response = await fetch(modelPath+'/metainfo.json');
+            metaData = await response.json();
 
             // 回傳成功給主線程
             self.postMessage({ type: 'INIT_SUCCESS', msgId });
@@ -65,9 +65,16 @@ function prepareData(sentences) {
                 texts.push(sent);
                 queryIds.push(i);
                 sentIds.push(sentId);
-            } else if (metaData.monophonic_chars[char]) {
-                partialResult[i] = metaData.monophonic_chars[char];
-            } else if (metaData.char_bopomofo_dict[char]) {
+            } else if (
+				/\p{Script=Han}/u.test(char) &&
+				metaData.monophonic_chars[char]
+			) {
+				const mono = metaData.monophonic_chars[char];
+
+				partialResult[i] = Array.isArray(mono)
+					? mono[1]
+					: mono;
+			} else if (metaData.char_bopomofo_dict[char]) {
                 partialResult[i] = metaData.char_bopomofo_dict[char][0];
             } else {
                 partialResult[i] = char; // 若完全找不到對應，保留原字
@@ -96,7 +103,7 @@ async function runInference(sentences) {
     let allCharIds = [];
     let allPositionIds = [];
 
-    for (let idx = 0; idx < batchSize; idx++) {
+for (let idx = 0; idx < batchSize; idx++) {
         const text = texts[idx].toLowerCase();
         const queryId = queryIds[idx];
 
@@ -116,7 +123,41 @@ async function runInference(sentences) {
         const charId = metaData.chars.indexOf(queryChar);
         allCharIds.push(charId);
 
-        const positionId = queryId + 1; // 考慮前端加上了 [CLS] 標記
+        // === 修正：動態對齊字元與 Token 的位置 ===
+        const tokens = tokenizer.tokenize(text);
+        let currentCharIdx = 0;
+        let positionId = -1;
+
+        for (let t = 0; t < tokens.length; t++) {
+            // 自動跳過原始字串中的空格或換行
+            while (currentCharIdx < text.length && (text[currentCharIdx] === ' ' || text[currentCharIdx] === '\t')) {
+                currentCharIdx++;
+            }
+            
+            // 當前比對的字元索引位置剛好是我們要找的多音字
+            if (currentCharIdx === queryId) {
+                positionId = t + 1; // +1 是因為 input_ids 最前面包含 [CLS] 標記
+                break;
+            }
+            
+            let token = tokens[t].toLowerCase();
+            if (token.startsWith('##')) {
+                token = token.slice(2);
+            }
+            
+            if (token === '[unk]') {
+                currentCharIdx += 1; // 未知字元通常佔 1 個字元長度
+            } else {
+                currentCharIdx += token.length; // 依據 Token 實際長度前進
+            }
+        }
+
+        // 萬一極端狀況沒對齊成功（防禦性兜底），才使用舊邏輯
+        if (positionId === -1) {
+            positionId = queryId + 1;
+        }
+        // =======================================
+
         allPositionIds.push(positionId);
     }
 

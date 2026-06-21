@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小樹閱讀</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+		<!-- 修改後的歡迎頁面：觸發狀態與流程檢查 -->
+		<section id="view-welcome" class="view active">
+			<div class="welcome-container">
+				<div class="mascot-placeholder">🐶</div>
+				<h1>歡迎回來！</h1>
+				<p>今天的小樹很想你喔，我們來灌溉它吧！</p>
+				<!-- 改調用核心判斷流 -->
+				<button class="btn-primary" onclick="app.startReadingFlow()">開始挑書</button>
+			</div>
+		</section>
+
+		<!-- 修改後的書架頁面：加上隨時追加興趣的按鈕 -->
+		<section id="view-bookshelf" class="view">
+			<header class="top-bar">
+				<div class="user-status">
+					<span class="avatar">🐶</span>
+					<!-- 4. 追加興趣按鈕：孩子或家長可隨時點擊 -->
+					<button id="btn-manage-tags" class="btn-icon-sub" title="修改興趣">⚙️ 修改興趣</button>
+					<div class="energy-bar-container" style="display:none;"> <!-- 暫隱藏或保留原樣 -->
+						<div class="energy-bar" style="width: 30%;"></div>
+					</div>
+				</div>
+				<button class="btn-icon" onclick="app.navigate('view-parents')" title="家長專區">🔒</button>
+			</header>
+			<main class="bookshelf-main">
+				<h2>我的專屬書架</h2>
+				<!-- 此處原本寫死卡片，現改為由 JS 自動渲染的容器 -->
+				<div id="bookshelf-scroll-container" class="horizontal-scroll">
+					<!-- 動態產出 8 篇文章 -->
+				</div>
+			</main>
+		</section>
+
+		<!-- 全新追加的畫面：興趣選擇器 (view-tag-picker) -->
+		<section id="view-tag-picker" class="view">
+			<main class="tag-picker-main">
+				<h2 id="tag-picker-title">選 3 個你最喜歡的東東！</h2>
+				<p class="tag-picker-subtitle">魔法書架會根據你的秘密興趣變出文章喔！</p>
+				
+				<!-- 標籤按鈕容器 -->
+				<div id="tag-list-container" class="tag-grid-container">
+					<!-- JS 動態生成按鈕 -->
+				</div>
+
+				<div class="action-bar">
+					<button id="btn-submit-tags" class="btn-primary disabled" disabled>選好了！打開魔法書架</button>
+				</div>
+			</main>
+		</section>
+
+		<section id="view-reader" class="view">
+			<div class="loading-box">🧚‍♀️ 魔法書載入中...</div>
+		</section>
+
+        <section id="view-parents" class="view">
+            <header class="top-bar">
+                <button class="btn-icon" onclick="app.navigate('view-bookshelf')">🔙 返回書架</button>
+                <h2>家長專區</h2>
+                <div style="width: 40px;"></div> </header>
+            <main class="parents-dashboard">
+                <div class="dashboard-cards">
+                    <div class="stat-card">
+                        <h4>今日閱讀字數</h4>
+                        <div class="number">420 字</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>今日魔王詞</h4>
+                        <div class="tags"><span class="tag warning">獨角仙</span><span class="tag warning">昆蟲</span></div>
+                    </div>
+                </div>
+                <div class="questions-section">
+                    <h3>孩子想問的問題 (1)</h3>
+                    <div class="question-item">
+                        <p class="q-source">來自：《恐龍的世界》</p>
+                        <p class="q-text"><mark>獨角仙</mark>是一種很酷的昆蟲。</p>
+                        <button class="btn-primary small">✅ 已解惑</button>
+                    </div>
+                </div>
+            </main>
+        </section>
+    </div>
+	<script src="module/tools.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
