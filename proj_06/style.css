@@ -400,6 +400,7 @@ rt {
 /* 預設情況下，不論句子有沒有反黃，注音（rt）一律徹底隱藏 */
 .sentence-block ruby rt {
     visibility: hidden;
+	display: none;
     opacity: 0;
 }
 
@@ -408,14 +409,46 @@ rt {
     background-color: #fff2a8; /* 粉嫩黃色 */
 }
 
-/* 當句子反黃時，裡面的注音才顯示出來 */
-.sentence-block.show-scaffold ruby rt {
-    visibility: visible;
-    opacity: 1;
-}
+
 
 /* 只有當特定的詞被點擊、加上 .show-bopomo 類別時，它的注音才會單獨顯現 */
 .sentence-block .word-item.show-bopomo ruby rt {
     visibility: visible;
+	display: initial;
     opacity: 1;
+}
+
+@font-face {
+	font-family: "Bopomofo";
+	src: url("font/bopomofo.woff2") format("woff2"), url("font/bopomofo.woff") format("woff");
+}
+
+ruby rt {
+	display: block;
+	font-family: "Bopomofo", "微軟正黑體";
+	font-size: 40%;
+	font-weight: 500;
+	line-height: 1;
+	text-align: center;
+	padding-left: 0.1em;
+	position: relative;
+	-webkit-text-orientation: upright;
+	text-orientation: upright;
+	writing-mode: vertical-lr;
+	white-space: nowrap;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	width: 1.5em;
+}
+
+ruby {
+	align-items: center;
+	display: inline-flex;
+	font-family: "微軟正黑體";
+	line-height: 1;
+	min-height: 1em;
+}
+
+p.reader-paragraph {
+    font-size: 2em;
 }

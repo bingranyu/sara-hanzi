@@ -87,52 +87,6 @@ const app = {
         }
 		
 		
-		// 監聽閱讀區域的點擊事件（請覆蓋原本 view-reader 的 click 監聽器）
-		const readerView = document.getElementById('view-reader');
-		if (readerView) {
-			readerView.addEventListener('click', (e) => {
-				// 1. 檢查是否點擊在句子區塊內
-				const sentenceEl = e.target.closest('.sentence-block');
-				if (!sentenceEl) return;
-
-				// 2. 檢查目前這句是否已經反黃了
-				const isHighlighted = sentenceEl.classList.contains('show-scaffold');
-
-				if (!isHighlighted) {
-					// 【情境一：句子尚未反黃】
-					// 點擊句子的任何地方 -> 讓該句反黃，但此時絕不顯示任何注音
-					
-					// 先清除其他句子的反黃與注音（維持畫面乾淨）
-					readerView.querySelectorAll('.sentence-block').forEach(el => {
-						el.classList.remove('show-scaffold');
-						el.querySelectorAll('.word-item').forEach(w => w.classList.remove('show-bopomo'));
-					});
-
-					// 讓當前句子反黃
-					sentenceEl.classList.add('show-scaffold');
-
-					// 5秒後自動移除句子的反黃與注音（防呆溫和鷹架）
-					setTimeout(() => {
-						sentenceEl.classList.remove('show-scaffold');
-						sentenceEl.querySelectorAll('.word-item').forEach(w => w.classList.remove('show-bopomo'));
-					}, 5000);
-
-				} else {
-					// 【情境二：句子已經在反黃狀態下】
-					// 檢查使用者是不是點擊在某個特定的「詞」上面 (.word-item)
-					const wordEl = e.target.closest('.word-item');
-					
-					if (wordEl) {
-						// 如果點到詞 -> 切換該詞的注音顯示狀態
-						wordEl.classList.toggle('show-bopomo');
-					} else {
-						// 如果點到的是句子內部的空白或其他非詞彙處 -> 取消這整句的反黃
-						sentenceEl.classList.remove('show-scaffold');
-						sentenceEl.querySelectorAll('.word-item').forEach(w => w.classList.remove('show-bopomo'));
-					}
-				}
-			});
-		}
     },
 
     startReadingFlow() {
@@ -384,6 +338,7 @@ const app = {
         }
 
         this._readerClickHandler = (e) => {
+			console.log(e);
             // 尋找被點擊的句子區塊
             const sentenceEl = e.target.closest('.sentence-block');
             if (!sentenceEl) return;
@@ -391,6 +346,7 @@ const app = {
             const isHighlighted = sentenceEl.classList.contains('show-scaffold');
 
             if (!isHighlighted) {
+				console.log("沒反黃")
                 // 【情境一：句子沒反黃】 -> 點擊任何地方，就只讓它反黃（此時不加任何注音）
                 
                 // 清除畫面上其他句子的反黃與注音
@@ -405,11 +361,11 @@ const app = {
                 // 5秒後自動淡出防呆
                 if (sentenceEl.scaffoldTimeout) clearTimeout(sentenceEl.scaffoldTimeout);
                 sentenceEl.scaffoldTimeout = setTimeout(() => {
-                    sentenceEl.classList.remove('show-scaffold');
                     sentenceEl.querySelectorAll('.word-item').forEach(w => w.classList.remove('show-bopomo'));
-                }, 5000);
-
+                }, 3000);
+				return
             } else {
+				console.log("已經在反黃狀態")
                 // 【情境二：句子已經在反黃狀態下】
                 const wordEl = e.target.closest('.word-item');
                 
@@ -421,12 +377,10 @@ const app = {
                     // 點擊詞彙時，延長句子的 5 秒計時器，避免看注音看到一半突然消失
                     if (sentenceEl.scaffoldTimeout) clearTimeout(sentenceEl.scaffoldTimeout);
                     sentenceEl.scaffoldTimeout = setTimeout(() => {
-                        sentenceEl.classList.remove('show-scaffold');
                         sentenceEl.querySelectorAll('.word-item').forEach(w => w.classList.remove('show-bopomo'));
-                    }, 5000);
+                    }, 3000);
                 } else {
                     // 如果點到的是句子內的空白 -> 直接關閉這句的反黃
-                    sentenceEl.classList.remove('show-scaffold');
                     sentenceEl.querySelectorAll('.word-item').forEach(w => w.classList.remove('show-bopomo'));
                     if (sentenceEl.scaffoldTimeout) clearTimeout(sentenceEl.scaffoldTimeout);
                 }
@@ -465,10 +419,11 @@ const app = {
                     const chars = Array.from(vocab);
                     chars.forEach((char, idx) => {
                         const bp = bopomos[idx] || '';
-                        const displayBp = bp.replace(/[1-5]/g, ''); 
-                        const tone = bp.match(/[1-5]/) ? bp.match(/[1-5]/)[0] : '';
+                        const displayBp = bp.replace('1', '').replace('2', 'ˊ').replace('3', 'ˇ').replace('4', 'ˋ').replace('5', '');
+                        						
+                        const tomdot = bp.match(/[5]/) ? `<span class="ruby-tmdot">˙</span>` : '';
 
-                        rubyInner += `${char}<rt data-tone="${tone}">${displayBp}</rt>`;
+                        rubyInner += `${char}<rt>${tomdot}${displayBp}</rt>`;
                     });
 
                     return `<span class="word word-item"><ruby>${rubyInner}</ruby></span>`;
@@ -494,7 +449,7 @@ const app = {
                 clickCount++;
                 
                 // 點擊即為該詞加上顯示注音的 class
-                rubyEl.classList.add('show-scaffold');
+                //rubyEl.classList.add('show-scaffold');
 
                 // 核心 PRD 機制：若同一個詞連續點擊 3 次以上，判定為魔王詞，保持顯示不淡出
                 if (clickCount >= 3) {
