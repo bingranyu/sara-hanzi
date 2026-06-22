@@ -9,6 +9,7 @@ env.localModelPath = './';
 let tokenizer = null;
 let model = null;
 let metaData = null;
+let patchData = null;
 
 // 監聽主線程傳來的消息
 self.onmessage = async function(e) {
@@ -24,6 +25,10 @@ self.onmessage = async function(e) {
             // 2. 載入元數據 (metainfo.json)
             const response = await fetch(modelPath+'/metainfo.json');
             metaData = await response.json();
+            
+            // 3. 載入補丁資料 (g2pw_patch.json)
+            const responsePatch = await fetch('./g2pw_patch.json');
+            patchData = await responsePatch.json();
 
             // 回傳成功給主線程
             self.postMessage({ type: 'INIT_SUCCESS', msgId });

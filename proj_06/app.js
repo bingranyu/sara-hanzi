@@ -1,3 +1,5 @@
+import {G2PWClient, WSClient, preprocessArticle} from "./module/tools.js"; 
+
 // --- 核心應用程式控制器 (SPA Controller) ---
 const app = {
     currentView: 'view-welcome',

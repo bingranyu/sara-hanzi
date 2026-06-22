@@ -1,5 +1,3 @@
-
-
 function splitTextHierarchy(text) {
 	if (!text || typeof text !== 'string') return [];
 
@@ -218,3 +216,5 @@ class WSClient {
 		});
 	}
 }
+
+export {G2PWClient, WSClient, preprocessArticle };

@@ -50,24 +50,26 @@
             font-family: "Courier New", Courier, monospace;
         }
     </style>
-	<script src="module/tools.js"></script>
 </head>
 <body>
 <script type="module">
+import {G2PWClient, WSClient, preprocessArticle } from "./module/tools.js"; 
+
 let g2pw = new G2PWClient();
 await g2pw.initModel();
 let ws = new WSClient();
 await ws.initModel();
 
-const wsInput = ["在 1953 年提出了 DNA 的雙螺旋模型。"];
-const wsArray = await ws.getws(wsInput);
+const text = ["陸地上最快的動物。"];
+console.log(text);
+
+const wsArray = await ws.getws(text);
 console.log(wsArray);
 
-const g2pwInput = ["在 1953 年提出了 DNA 的雙螺旋模型。"];
-const bopomofoArray = await g2pw.getBopomofo(g2pwInput);
+const bopomofoArray = await g2pw.getBopomofo(text);
 console.log(bopomofoArray);
 
-let article = `去氧核醣核酸，也就是我們熟知的 DNA，是地球上絕大多數生物的遺傳物質。它靜靜地躺在細胞核中，卻操控著生命的一切運作！`;
+let article = `陸地上最快的動物。`;
 
 let t = await preprocessArticle(article,ws,g2pw);
 console.log(t);
