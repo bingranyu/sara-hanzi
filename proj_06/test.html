@@ -66,7 +66,19 @@ console.log(text);
 const wsArray = await ws.getws(text);
 console.log(wsArray);
 
-const bopomofoArray = await g2pw.getBopomofo(text);
+let bopomofoArray = await g2pw.getBopomofo(text);
+console.log(bopomofoArray);
+
+const patchData = {"陸地": ["ㄌㄨ4","ㄉㄧ4"]};
+for(const k in patchData){
+    for(let i=0; i<text.length;i++){
+        const patchStart = text[i].indexOf(k);
+        if(patchStart>=0){
+            const patchLen = k.length;
+            bopomofoArray[i].splice(patchStart, patchLen, ...patchData[k]);
+        }
+    }
+}
 console.log(bopomofoArray);
 
 let article = `陸地上最快的動物。`;

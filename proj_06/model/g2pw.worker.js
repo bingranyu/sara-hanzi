@@ -208,6 +208,16 @@ for (let idx = 0; idx < batchSize; idx++) {
         const queryId = queryIds[i];
         partialResults[sentId][queryId] = preds[i];
     }
+    
+    for(const k in patchData){
+        for(let i=0; i<sentences.length;i++){
+            const patchStart = sentences[i].indexOf(k);
+            if(patchStart>=0){
+                const patchLen = k.length;
+                partialResults[i].splice(patchStart, patchLen, ...patchData[k]);
+            }
+        }
+    }
 
     return partialResults;
 }
