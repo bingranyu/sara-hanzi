@@ -243,6 +243,7 @@ const app = {
                 if (this.state.models.isLoaded) {
                     // 逐段送入模型，不卡住其他段落
                     processedParagraph = await preprocessArticle(rawParagraph, this.state.models.ws, this.state.models.g2pw);
+					console.log(processedParagraph);
                 } else {
                     processedParagraph = this._fallbackProcess(rawParagraph);
                 }
@@ -408,53 +409,68 @@ const app = {
         readerView.addEventListener('click', this._readerClickHandler);
     },
 	
-	
-	// 核心 HTML 生成器：將傳入的多維結構依據 段落 -> 句子 -> 詞彙 進行解析
-    _generateRubyHTML(wordArray) {
-        if (!Array.isArray(wordArray)) return wordArray;
-        
-        // 1. 處理 3D/4D 段落陣列 (由 preprocessArticle 產生的還原結構)
-        if (wordArray.length > 0 && Array.isArray(wordArray[0]) && Array.isArray(wordArray[0][0])) {
-            return wordArray.map(paragraph => {
-                return this._generateRubyHTML(paragraph);
-            }).join('');
-        }
+	_generateRubyHTML(wordArray) {
+		if (!Array.isArray(wordArray)) return wordArray;
+		
+		// 1. 處理 3D/4D 段落陣列 (段落 -> 句子 -> 詞彙)
+		if (wordArray.length > 0 && Array.isArray(wordArray[0]) && Array.isArray(wordArray[0][0])) {
+			return wordArray.map(paragraph => {
+				return this._generateRubyHTML(paragraph);
+			}).join('');
+		}
 
-        // 2. 處理句子層級：wordArray 此時是「一句句的詞彙陣列」組成的陣列
-        if (wordArray.length > 0 && Array.isArray(wordArray[0])) {
-            return wordArray.map(sentence => {
-                const sentenceHTML = sentence.map(item => {
-                    const vocab = item.vocab;
-                    const bopomos = item.bopomo || [];
-                    
-                    // 標點符號或英文
-                    if (/[\uFF00-\uFFEF\u0020-\u007E]/.test(vocab)) {
-                        return `<span class="word punctuation">${vocab}</span>`;
-                    }
+		// 2. 處理 2D 句子層級 (句子 -> 詞彙)
+		if (wordArray.length > 0 && Array.isArray(wordArray[0])) {
+			return wordArray.map(sentence => {
+				const sentenceHTML = sentence.map(item => this._processSingleVocab(item)).join('');
+				return `<span class="sentence-block">${sentenceHTML}</span>`;
+			}).join('');
+		}
 
-                    // 中文詞彙：將各字拆開與注音配對，並包上 .word-item
-                    let rubyInner = '';
-                    const chars = Array.from(vocab);
-                    chars.forEach((char, idx) => {
-                        const bp = bopomos[idx] || '';
-                        const displayBp = bp.replace('1', '').replace('2', 'ˊ').replace('3', 'ˇ').replace('4', 'ˋ').replace('5', '');
-                        						
-                        const tomdot = bp.match(/[5]/) ? `<span class="ruby-tmdot">˙</span>` : '';
+		// 3. 🌟 升級 1D 陣列分支 (專門應對標題或單純詞彙陣列)
+		// 確保 preprocessTitle 回傳的 1D 結構也能完整被過濾與解析
+		if (wordArray.length > 0 && typeof wordArray[0] === 'object') {
+			return wordArray.map(item => this._processSingleVocab(item)).join('');
+		}
 
-                        rubyInner += `${char}<rt>${tomdot}${displayBp}</rt>`;
-                    });
+		// 4. 極端降級機制（純字串陣列）
+		return wordArray.map(item => item.vocab || item).join('');
+	},
 
-                    return `<span class="word word-item"><ruby>${rubyInner}</ruby></span>`;
-                }).join('');
+	// 🌟 抽離出來的核心單一詞彙處理邏輯，標題與內文共用
+	_processSingleVocab(item) {
+		const vocab = item.vocab || '';
+		const bopomos = item.bopomo || [];
+		
+		// 1) 只要整個詞彙不含中文字，直接當作純標點符號輸出
+		if (!/[\u4E00-\u9FFF]/.test(vocab)) {
+			return `<span class="word punctuation">${vocab}</span>`;
+		}
 
-                // 每句話包成一個獨立的句子 block
-                return `<span class="sentence-block">${sentenceHTML}</span>`;
-            }).join('');
-        }
+		// 中文或混雜標點的詞彙：包上 .word-item，並逐字配對
+		let rubyInner = '';
+		const chars = Array.from(vocab);
+		
+		chars.forEach((char, idx) => {
+			const bp = bopomos[idx] || '';
+			
+			// 合法注音與聲調的正則表達式
+			const isValidBopomo = /^[\u3105-\u312F1-5]+$/.test(bp);
 
-        // 3. 降級機制或 1D 陣列 (例如標題)，直接輸出純字串不加 ruby
-        return wordArray.map(item => item.vocab || item).join('');
-    },
+			// 終極防禦條件：非中文字、注音為空、或注音不合法時，不生成 <rt>
+			if (!/[\u4E00-\u9FFF]/.test(char) || bp === '' || !isValidBopomo) {
+				rubyInner += char; 
+			} else {
+				// 正常中文與注音處理
+				const displayBp = bp.replace('1', '').replace('2', 'ˊ').replace('3', 'ˇ').replace('4', 'ˋ').replace('5', '');
+				const tomdot = bp.match(/[5]/) ? `<span class="ruby-tmdot">˙</span>` : '';
+				
+				rubyInner += `<ruby>${char}<rt>${tomdot}${displayBp}</rt></ruby>`;
+			}
+		});
+
+		return `<span class="word word-item">${rubyInner}</span>`;
+	},
 
     // 綁定注音 5 秒淡出與鷹架點擊機制
     bindRubyInteraction() {

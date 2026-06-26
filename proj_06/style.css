@@ -157,7 +157,7 @@ body {
 }
 .word {
     display: inline-block;
-    margin-right: 0.3em; /* 模擬斷詞微空格 */
+    margin-bottom: 0.3em; /* 模擬斷詞微空格 */
     position: relative;
 }
 .zhuyin {
@@ -426,7 +426,7 @@ rt {
 ruby rt {
 	display: block;
 	font-family: "Bopomofo", "微軟正黑體";
-	font-size: 40%;
+	font-size: 30%;
 	font-weight: 500;
 	line-height: 1;
 	text-align: center;
@@ -439,6 +439,8 @@ ruby rt {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	width: 1.5em;
+	position: absolute;
+    right: -0.5em;
 }
 
 ruby {
@@ -447,8 +449,15 @@ ruby {
 	font-family: "微軟正黑體";
 	line-height: 1;
 	min-height: 1em;
+	writing-mode: horizontal-tb;
+    cursor: vertical-text;
 }
 
 p.reader-paragraph {
     font-size: 2em;
+}
+
+main.reader-theatre {
+	writing-mode: vertical-rl;
+	overflow: scroll;
 }
