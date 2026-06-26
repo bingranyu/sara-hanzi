@@ -202,40 +202,63 @@ const app = {
         });
     },
 
-    // 核心追加功能 1：根據書本 ID 抓取對應文章 JSON 並處理呈現
+    // 核心追加功能 1：根據書本 ID 抓取對應文章 JSON 並處理呈現（已優化為分段漸進呈現）
     async loadAndOpenArticle(articleId) {
         try {
-            // 顯示載入中骨架屏或提示（優化兒童體驗）
+            // 1. 顯示載入中提示
             document.getElementById('view-reader').innerHTML = `<div class="loading-box">🧚‍♀️ 魔法書載入中...</div>`;
             this.navigate('view-reader');
 
-            // 抓取 articles/[id].json
+            // 2. 抓取文章 JSON
             const response = await fetch(`articles/${articleId}.json`);
             if (!response.ok) throw new Error("找不到文章檔案");
             const articleData = await response.json();
             
             this.state.currentArticle = articleData;
 
-            // 核心追加功能 3：呼叫 NLP 模型進行預處理 (斷詞與注音配對)
+            // 3. 先行初始化閱讀器基礎外殼 (標題與基礎互動)
             let processedTitle = articleData.title;
-            let processedContent = [];
-
             if (this.state.models.isLoaded) {
-                // 處理標題 (包裝成適合模型輸入的物件或字串，依您系統的 preprocessArticle 設計)
                 processedTitle = await preprocessArticle(articleData.title, this.state.models.ws, this.state.models.g2pw);
-                // 處理內文
-                processedContent = await preprocessArticle(articleData.text, this.state.models.ws, this.state.models.g2pw);
             } else {
-                // 降級備災機制：若模型尚未載入完成，直接用模擬器或純文字處理
-                console.warn("模型尚未就緒，啟動降級純文字轉換");
-                processedContent = this._fallbackProcess(articleData.text);
                 processedTitle = this._fallbackProcess(articleData.title)[0]; 
             }
-			console.log(processedContent);
 
+            // 初始化外殼（此時內文容器是空的，題目先隱藏或放著）
+            this.renderReaderViewSkeleton(processedTitle, articleData.questions);
 
-            // 核心追加功能 2：渲染至閱讀器 UI 
-            this.renderReaderView(processedTitle, processedContent, articleData.questions);
+            // 4. 🌟 分段漸進式處理內文
+            const pContainer = document.getElementById('article-paragraphs-container');
+            // 假設 articleData.text 是一個陣列（各段落文字），若它是純文字字串，則用換行符號切分：
+            const paragraphsText = Array.isArray(articleData.text) 
+                ? articleData.text 
+                : articleData.text.split('\n').filter(p => p.trim() !== '');
+
+            const totalParagraphs = paragraphsText.length;
+
+            for (let i = 0; i < totalParagraphs; i++) {
+                const rawParagraph = paragraphsText[i];
+                let processedParagraph = [];
+
+                if (this.state.models.isLoaded) {
+                    // 逐段送入模型，不卡住其他段落
+                    processedParagraph = await preprocessArticle(rawParagraph, this.state.models.ws, this.state.models.g2pw);
+                } else {
+                    processedParagraph = this._fallbackProcess(rawParagraph);
+                }
+
+                // 渲染單一建立的新段落
+                this.appendParagraphToReader(processedParagraph, i);
+
+                // 動態更新進度條（可選，增加趣味性）
+                const progressPercent = Math.min(10 + Math.floor(((i + 1) / totalParagraphs) * 80), 90);
+                const progressBar = document.getElementById('reader-progress');
+                if (progressBar) progressBar.style.width = `${progressPercent}%`;
+            }
+
+            // 全部段落載入完成，進度條到 100%
+            const progressBar = document.getElementById('reader-progress');
+            if (progressBar) progressBar.style.width = `100%`;
 
         } catch (error) {
             console.error("載入文章失敗:", error);
@@ -244,11 +267,10 @@ const app = {
         }
     },
 
-	// 核心追加功能 2 & 3：將處理後的 JSON 結構渲染成標準 <ruby> 標籤
-    renderReaderView(processedTitle, paragraphs, questions) {
+    // 拆分出來的方法：只渲染外殼
+    renderReaderViewSkeleton(processedTitle, questions) {
         const readerView = document.getElementById('view-reader');
         
-        // 重構 Reader 的內層結構
         readerView.innerHTML = `
             <header class="top-bar reader-bar">
                 <button class="btn-icon" onclick="app.navigate('view-bookshelf')">🔙</button>
@@ -268,30 +290,7 @@ const app = {
             </main>
         `;
 
-        // 1. 渲染內文段落
-        const pContainer = document.getElementById('article-paragraphs-container');
-        paragraphs.forEach((sentenceArray, index) => {
-            const p = document.createElement('p');
-            p.className = "reader-paragraph"; // 改用更單純的 class，避免與之前的引導衝突
-
-            // 直接將包含複數 .sentence-block 的 HTML 塞入段落中
-            p.innerHTML = this._generateRubyHTML(sentenceArray);
-            
-            // 加上問問爸媽按鈕
-            const askBtn = document.createElement('button');
-            askBtn.className = 'btn-ask-parents';
-            askBtn.innerHTML = '⭐';
-            askBtn.onclick = (e) => {
-                e.stopPropagation(); 
-                askBtn.classList.toggle('marked');
-                console.log("標記此句送入家長專區");
-            };
-            p.appendChild(askBtn);
-
-            pContainer.appendChild(p);
-        });
-
-        // 2. 渲染題目與選擇題
+        // 渲染題目
         const quizList = document.getElementById('quiz-questions-list');
         if (questions && questions.length > 0) {
             questions.forEach((q, qIndex) => {
@@ -306,18 +305,12 @@ const app = {
                     const optBtn = document.createElement('button');
                     optBtn.className = 'quiz-opt-btn';
                     optBtn.innerHTML = `<span class="opt-emoji">${opt.emoji}</span> <span class="opt-text">${opt.text}</span>`;
-                    
                     optBtn.onclick = () => {
-                        if (opt.is_correct) {
-                            optBtn.classList.add('correct');
-                        } else {
-                            optBtn.classList.add('wrong');
-                            optBtn.setAttribute('disabled', 'true');
-                        }
+                        if (opt.is_correct) { optBtn.classList.add('correct'); } 
+                        else { optBtn.classList.add('wrong'); optBtn.setAttribute('disabled', 'true'); }
                     };
                     optionsContainer.appendChild(optBtn);
                 });
-
                 qBox.appendChild(optionsContainer);
                 quizList.appendChild(qBox);
             });
@@ -325,8 +318,31 @@ const app = {
             document.getElementById('quiz-container').style.display = 'none';
         }
 
-        // 3. 🌟 統一在這裡進行精準的「句與詞」點擊邏輯監聽 (取代舊有 bindRubyInteraction)
+        // 啟動點擊事件監聽 (利用事件代理，新長出來的段落也能直接點擊，不需重複初始化)
         this._initReaderInteractions();
+    },
+
+    // 拆分出來的方法：每處理完一段就追加一段到畫面上
+    appendParagraphToReader(paragraphWords, index) {
+        const pContainer = document.getElementById('article-paragraphs-container');
+        if (!pContainer) return;
+
+        const p = document.createElement('p');
+        p.className = "reader-paragraph";
+        p.innerHTML = this._generateRubyHTML(paragraphWords);
+        
+        // 問問爸媽按鈕
+        const askBtn = document.createElement('button');
+        askBtn.className = 'btn-ask-parents';
+        askBtn.innerHTML = '⭐';
+        askBtn.onclick = (e) => {
+            e.stopPropagation(); 
+            askBtn.classList.toggle('marked');
+            console.log(`標記第 ${index + 1} 段送入家長專區`);
+        };
+        p.appendChild(askBtn);
+
+        pContainer.appendChild(p);
     },
 
     // 全新獨立的閱讀互動控制邏輯

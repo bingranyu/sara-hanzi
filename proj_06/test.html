@@ -60,7 +60,7 @@ await g2pw.initModel();
 let ws = new WSClient();
 await ws.initModel();
 
-const text = ["陸地上最快的動物。"];
+const text = ["獵豹跑步時速度最高可達到時速110千米。"];
 console.log(text);
 
 const wsArray = await ws.getws(text);
@@ -69,22 +69,16 @@ console.log(wsArray);
 let bopomofoArray = await g2pw.getBopomofo(text);
 console.log(bopomofoArray);
 
-const patchData = {"陸地": ["ㄌㄨ4","ㄉㄧ4"]};
-for(const k in patchData){
-    for(let i=0; i<text.length;i++){
-        const patchStart = text[i].indexOf(k);
-        if(patchStart>=0){
-            const patchLen = k.length;
-            bopomofoArray[i].splice(patchStart, patchLen, ...patchData[k]);
-        }
-    }
-}
-console.log(bopomofoArray);
 
-let article = `陸地上最快的動物。`;
+let article = `獵豹跑步時速度最高可達到時速110千米。`;
 
 let t = await preprocessArticle(article,ws,g2pw);
 console.log(t);
+
+console.log(JSON.stringify(wsArray));
+console.log(JSON.stringify(bopomofoArray));
+console.log(JSON.stringify(t));
+
 
 /*
 let g2pw = new G2PWClient();
