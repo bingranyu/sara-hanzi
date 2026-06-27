@@ -213,6 +213,7 @@ const app = {
             const response = await fetch(`articles/${articleId}.json`);
             if (!response.ok) throw new Error("找不到文章檔案");
             const articleData = await response.json();
+			console.log(articleData);
             
             this.state.currentArticle = articleData;
 
@@ -272,52 +273,23 @@ const app = {
     renderReaderViewSkeleton(processedTitle, questions) {
         const readerView = document.getElementById('view-reader');
         
-        readerView.innerHTML = `
+		readerView.innerHTML = `
             <header class="top-bar reader-bar">
                 <button class="btn-icon" onclick="app.navigate('view-bookshelf')">🔙</button>
                 <div class="progress-bar-container">
                     <div id="reader-progress" class="progress-bar" style="width: 10%;">🚀</div>
                 </div>
-                <button class="btn-primary small" onclick="app.navigate('view-bookshelf')">讀完了</button>
+                <button class="btn-primary small" onclick="app.startQuizFlow()">讀完了 🏁</button>
             </header>
             <main class="reader-theatre">
                 <h1 class="reader-article-title">${this._generateRubyHTML(processedTitle)}</h1>
                 <div class="text-content" id="article-paragraphs-container"></div>
                 
-                <div class="quiz-section" id="quiz-container">
-                    <h3 class="quiz-section-title">✨ 讀後小挑戰 ✨</h3>
+                <div class="quiz-section" id="quiz-container" style="display: none;">
                     <div id="quiz-questions-list"></div>
                 </div>
             </main>
         `;
-
-        // 渲染題目
-        const quizList = document.getElementById('quiz-questions-list');
-        if (questions && questions.length > 0) {
-            questions.forEach((q, qIndex) => {
-                const qBox = document.createElement('div');
-                qBox.className = 'quiz-item-box';
-                qBox.innerHTML = `<p class="quiz-question-text">${qIndex + 1}. ${q.question}</p>`;
-                
-                const optionsContainer = document.createElement('div');
-                optionsContainer.className = 'quiz-options-container';
-
-                q.options.forEach(opt => {
-                    const optBtn = document.createElement('button');
-                    optBtn.className = 'quiz-opt-btn';
-                    optBtn.innerHTML = `<span class="opt-emoji">${opt.emoji}</span> <span class="opt-text">${opt.text}</span>`;
-                    optBtn.onclick = () => {
-                        if (opt.is_correct) { optBtn.classList.add('correct'); } 
-                        else { optBtn.classList.add('wrong'); optBtn.setAttribute('disabled', 'true'); }
-                    };
-                    optionsContainer.appendChild(optBtn);
-                });
-                qBox.appendChild(optionsContainer);
-                quizList.appendChild(qBox);
-            });
-        } else {
-            document.getElementById('quiz-container').style.display = 'none';
-        }
 
         // 啟動點擊事件監聽 (利用事件代理，新長出來的段落也能直接點擊，不需重複初始化)
         this._initReaderInteractions();
@@ -330,8 +302,14 @@ const app = {
 
         const p = document.createElement('p');
         p.className = "reader-paragraph";
+		p.setAttribute('data-p-index', index);
         p.innerHTML = this._generateRubyHTML(paragraphWords);
         
+		// 確保段落內的每一個句子區塊，都有加上專屬的類別，方便尋寶搜尋
+		p.querySelectorAll('.sentence-block').forEach(sNode => {
+            sNode.classList.add('article-sentence');
+        });
+		
         // 問問爸媽按鈕
         const askBtn = document.createElement('button');
         askBtn.className = 'btn-ask-parents';
@@ -529,8 +507,204 @@ const app = {
                 view.classList.remove('active');
             }
         });
+    },
+	
+// ==========================================================================
+    // 🌟 全新追加：讀後挑戰與溫和尋寶狀態機模組
+    // ==========================================================================
+    
+    // 挑戰模組的獨立狀態
+    quizState: {
+        currentIndex: 0,    // 目前進行到第幾題
+        activeClueText: "", // 當前答錯、正在尋找的關鍵句
+        wrongAttempts: 0    // 當前題目的答錯次數
+    },
+
+    // 1. 啟動挑戰入口 (當孩子點擊「讀完了」時觸發)
+    startQuizFlow() {
+        if (!this.state.currentArticle || !this.state.currentArticle.quizzes) {
+            alert("這篇文章目前沒有安排小挑戰喔！");
+            this.navigate('view-bookshelf');
+            return;
+        }
+        this.quizState.currentIndex = 0;
+        this.quizState.wrongAttempts = 0;
+        this.quizState.activeClueText = "";
+        
+        // 切換到我們在 index.html 新增的 view-quiz 挑戰頁面
+        this.navigate('view-quiz');
+        this.renderCurrentQuiz();
+    },
+
+    // 2. 渲染當前題目與選項 (橫排、指尖友善版)
+    renderCurrentQuiz() {
+        const quizzes = this.state.currentArticle.quizzes;
+        const currentQuiz = quizzes[this.quizState.currentIndex];
+        
+        // 更新進度文字
+        document.getElementById('quiz-progress').innerText = `第 ${this.quizState.currentIndex + 1} / ${quizzes.length} 題`;
+        
+        // 填入題目
+        document.getElementById('quiz-question-text').innerText = currentQuiz.question;
+        
+        // 隱藏上一次的錯誤反饋框
+        document.getElementById('quiz-feedback-box').classList.add('hidden');
+        
+        // 渲染選項
+        const container = document.getElementById('quiz-options-container');
+        container.innerHTML = '';
+        
+        currentQuiz.options.forEach((optionText, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'quiz-option-btn';
+            btn.innerText = optionText;
+            btn.onclick = () => this.handleAnswerSubmit(index, btn);
+            container.appendChild(btn);
+        });
+    },
+
+    // 3. 檢查答案 (無挫折導引)
+    handleAnswerSubmit(selectedIndex, clickedButton) {
+        const quizzes = this.state.currentArticle.quizzes;
+        const currentQuiz = quizzes[this.quizState.currentIndex];
+        
+        if (selectedIndex === currentQuiz.correct_index) {
+            // 答對了！閃爍綠色回饋
+            clickedButton.classList.add('correct');
+            setTimeout(() => {
+                this.quizState.currentIndex++;
+                if (this.quizState.currentIndex < quizzes.length) {
+                    this.renderCurrentQuiz();
+                } else {
+                    // 答完最後一題，顯示恭喜與下一篇推薦
+                    this.showCelebrationAndRecommendation();
+                }
+            }, 800);
+        } else {
+            // 答錯了：不顯示大叉叉，將被點選的錯誤選項變灰變淡
+            clickedButton.disabled = true;
+            clickedButton.classList.add('wrong');
+            
+            this.quizState.wrongAttempts++;
+            // 完美對齊新版 AI 規格：直接拿取複製貼上的 hint_text
+            this.quizState.activeClueText = currentQuiz.hint_text || ""; 
+            
+            // 溫和浮現「搭魔法毯回去找找看」的按鈕
+            document.getElementById('quiz-feedback-box').classList.remove('hidden');
+        }
+    },
+
+// 4. 【核心尋寶機制】點擊「回去找線索」
+    goToFindClue() {
+        // 先切換回閱讀器視圖，讓孩子看文章
+        this._switchView('view-reader'); 
+
+        // 效果 1：把已經反黃或點擊過的段落與句子全部取消反黃，清空畫面干擾
+        document.querySelectorAll('.sentence-block').forEach(el => {
+            el.classList.remove('show-scaffold', 'clue-highlight-spotlight');
+        });
+        
+        // 同時移除畫面上先前可能殘留的舊寶藏圖示，避免重複長出寶藏
+        document.querySelectorAll('.quiz-treasure-icon').forEach(el => el.remove());
+        
+        // 抓取畫面上所有的句子節點
+        const allSentences = document.querySelectorAll('.article-sentence');
+        let targetSentenceNode = null;
+        
+        if (this.quizState.activeClueText) {
+            for (let node of allSentences) {
+                // 🌟 核心修正：複製節點並拔除其中的 <rt> 標籤，還原出「沒有注音的純國字文字」
+                const cloneNode = node.cloneNode(true);
+                cloneNode.querySelectorAll('rt').forEach(rt => rt.remove());
+                const pureChineseText = cloneNode.textContent; // 這時就會是純國字了！
+
+                // 拿純國字跟 AI 的題庫線索做比對
+                if (pureChineseText.includes(this.quizState.activeClueText)) {
+                    targetSentenceNode = node;
+                    break;
+                }
+            }
+        }
+        
+        if (targetSentenceNode) {
+            // 效果 2：把 hint_text 對到的那一句話加上聚光燈發光反黃
+            targetSentenceNode.classList.add('clue-highlight-spotlight');
+            
+            // 效果 2：在句子旁邊（最前端）浮現一個寶藏小 icon
+            const treasureIcon = document.createElement('span');
+            treasureIcon.className = 'quiz-treasure-icon';
+            treasureIcon.innerText = '💎'; // 您也可以換成 🎁、🏴‍☠️ 或 👑
+            
+            // 使用 prepend 塞入句首，孩子橫向滾動畫面時會第一眼看到
+            targetSentenceNode.prepend(treasureIcon);
+            
+            // 直式排版專屬橫向平滑捲動：自動幫你把發光與帶有寶藏的段落滾動到視窗中央
+            targetSentenceNode.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+        
+        // 在右下角浮現「我找到了！回挑戰 👑」的懸浮按鈕
+        document.getElementById('btn-return-to-quiz').classList.remove('hidden');
+    },
+
+    // 5. 看完提示，一鍵重返題目
+    returnToQuizFromClue() {
+        // 隱藏懸浮按鈕
+        document.getElementById('btn-return-to-quiz').classList.add('hidden');
+        
+        // 清除尋寶發光類別，並拔除剛才動態生成的寶藏小 icon
+        document.querySelectorAll('.clue-highlight-spotlight').forEach(el => el.classList.remove('clue-highlight-spotlight'));
+        document.querySelectorAll('.quiz-treasure-icon').forEach(el => el.remove());
+        
+        // 切回挑戰蓋屏，繼續剛才沒寫完的那一題
+        this._switchView('view-quiz');
+    },
+
+    // 6. 暫離挑戰視圖
+    closeQuizView() {
+        document.getElementById('btn-return-to-quiz').classList.add('hidden');
+        this.navigate('view-reader');
+    },
+
+    // 7. 通關全對歡慶，並撈取 catalog.json 實現智慧續讀推薦
+    showCelebrationAndRecommendation() {
+        const overlay = document.getElementById('quiz-celebration-overlay');
+        overlay.classList.remove('hidden');
+        
+        const recBox = document.getElementById('next-recommendation-box');
+        recBox.innerHTML = '';
+        
+        // 檢查是否有書籍目錄可以撈取推薦
+        if (this.state.catalog && this.state.catalog.articles) {
+            const currentId = this.state.currentArticle.article_id;
+            // 排除當前讀的這篇，挑選下一篇（若無則拿第一篇）
+            const nextArticle = this.state.catalog.articles.find(a => a.id !== currentId) || this.state.catalog.articles[0];
+            
+            if (nextArticle) {
+                recBox.innerHTML = `
+                    <p>下一篇推薦你讀這個魔法寶箱：</p>
+                    <button class="btn-recommend-card" onclick="app.loadAndRecommendNext('${nextArticle.id}')">
+                        <span class="rec-emoji">${nextArticle.cover_emoji || '📚'}</span>
+                        <span class="rec-title">${nextArticle.title}</span>
+                    </button>
+                `;
+            }
+        }
+    },
+
+    // 8. 點擊推薦卡片，一鍵無縫載入新書
+    async loadAndRecommendNext(articleId) {
+        // 隱藏全螢幕通關特效
+        document.getElementById('quiz-celebration-overlay').classList.add('hidden');
+        
+        // 直接調用您原有的全套 AI 載入與分段渲染流
+        await this.loadAndOpenArticle(articleId);
     }
+	
 };
+
+
+
+
 window.app = app;
 document.addEventListener('DOMContentLoaded', () => {
     app.init();

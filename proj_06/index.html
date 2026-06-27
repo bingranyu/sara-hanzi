@@ -41,7 +41,7 @@
 			</main>
 		</section>
 
-		<!-- 全新追加的畫面：興趣選擇器 (view-tag-picker) -->
+		<!-- 興趣選擇器 (view-tag-picker) -->
 		<section id="view-tag-picker" class="view">
 			<main class="tag-picker-main">
 				<h2 id="tag-picker-title">選 3 個你最喜歡的東東！</h2>
@@ -58,9 +58,45 @@
 			</main>
 		</section>
 
+		<!-- 文章閱讀 (view-reader) -->
 		<section id="view-reader" class="view">
 			<div class="loading-box">🧚‍♀️ 魔法書載入中...</div>
 		</section>
+		
+		<!-- 讀後挑戰 (view-quiz) -->
+		<section id="view-quiz" class="view">
+			<div class="quiz-container">
+				<div class="quiz-header">
+					<span id="quiz-progress">題目載入中...</span>
+					<button class="btn-close-quiz" onclick="app.closeQuizView()">暫離 🚪</button>
+				</div>
+				
+				<main class="quiz-body">
+					<div id="quiz-mascot">🧚‍♀️</div>
+					<h3 id="quiz-question-text">這是題目文字？</h3>
+					<div id="quiz-options-container">
+						</div>
+					<div id="quiz-feedback-box" class="hidden">
+						<p>哇！答案藏在故事裡喔！🧚‍♀️</p>
+						<button class="btn-primary" onclick="app.goToFindClue()">搭魔法毯回去找找看 🚀</button>
+					</div>
+				</main>
+			</div>
+		</section>
+
+		<button id="btn-return-to-quiz" class="hidden" onclick="app.returnToQuizFromClue()">
+			我找到了！回挑戰 👑
+		</button>
+
+		<div id="quiz-celebration-overlay" class="hidden">
+			<div class="celebration-content">
+				<div class="celebration-emoji">🌿🎉🥳</div>
+				<h2>太厲害了！全對通關！</h2>
+				<p>小樹又長大了一點點喔！</p>
+				<div id="next-recommendation-box">
+					</div>
+			</div>
+		</div>
 
         <section id="view-parents" class="view">
             <header class="top-bar">

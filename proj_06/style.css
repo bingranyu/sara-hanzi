@@ -462,3 +462,216 @@ main.reader-theatre {
 	writing-mode: vertical-rl;
 	overflow: scroll;
 }
+
+/* ==========================================================================
+   讀後小挑戰與無挫折引導樣式 (橫書排版、指尖友善、聚光燈線索)
+   ========================================================================== */
+
+/* 挑戰賽蓋屏視圖 */
+#view-quiz {
+    background-color: #F0F4F1; /* 粉嫩淡綠色背景，舒緩測驗壓力 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-lg);
+}
+
+/* 挑戰主容器：改回當代 App 的標準橫書，確保按鈕好點擊 */
+.quiz-container {
+    width: 100%;
+    max-width: 500px;
+    background: var(--card-bg);
+    border-radius: 24px;
+    padding: var(--spacing-lg);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    writing-mode: horizontal-tb; /* 強制橫書 */
+}
+
+.quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    color: #666;
+    margin-bottom: var(--spacing-md);
+}
+
+.btn-close-quiz {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.quiz-body {
+    text-align: center;
+}
+
+#quiz-mascot {
+    font-size: 48px;
+    margin-bottom: var(--spacing-sm);
+}
+
+#quiz-question-text {
+    font-size: 20px;
+    color: var(--text-color);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.5;
+}
+
+/* 選項按鈕組 */
+#quiz-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.quiz-option-btn {
+    width: 100%;
+    min-height: 56px; /* 指尖友善高度 */
+    background-color: #FAF8F5;
+    border: 2px solid #E6E2DC;
+    border-radius: 16px;
+    font-size: 18px;
+    color: var(--text-color);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+/* 答錯時溫和變淡變灰並禁用 */
+.quiz-option-btn.wrong {
+    background-color: #ECEAE6;
+    border-color: #D6D2CC;
+    color: #999;
+    opacity: 0.5;
+    transform: scale(0.96);
+}
+
+/* 答對時的綠色反饋 */
+.quiz-option-btn.correct {
+    background-color: #E3F7EE;
+    border-color: var(--primary-color);
+    color: var(--primary-hover);
+    font-weight: bold;
+}
+
+/* 溫和尋寶反饋盒 */
+#quiz-feedback-box {
+    background-color: #FFF9E6;
+    border-radius: 16px;
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    animation: fadeInUp 0.3s ease;
+}
+#quiz-feedback-box p {
+    color: #B28F00;
+    font-weight: bold;
+    margin-bottom: var(--spacing-sm);
+}
+
+/* 【重要】尋寶時的句子級聚光燈閃爍反黃效果 */
+.article-sentence.clue-highlight-spotlight {
+    background-color: #FFEB3B !important; /* 鮮明飽滿的尋寶黃 */
+    box-shadow: 0 0 15px #FFEB3B;
+    border-radius: 6px;
+    animation: cluePulse 1.5s infinite ease-in-out;
+    padding: 2px 4px;
+}
+
+@keyframes cluePulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.02); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* 一鍵返回做題懸浮按鈕 (固定於右下角，直排畫面不干擾) */
+#btn-return-to-quiz {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 999;
+    background-color: #FFC107; /* 皇家金黃色 */
+    color: #332300;
+    border: none;
+    border-radius: 50px;
+    padding: 16px 28px;
+    font-size: 18px;
+    font-weight: bold;
+    box-shadow: 0 8px 24px rgba(255, 193, 7, 0.4);
+    cursor: pointer;
+    animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    writing-mode: horizontal-tb;
+}
+
+/* 通關歡慶滿版遮罩 */
+#quiz-celebration-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(255,255,255,0.96);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    writing-mode: horizontal-tb;
+}
+
+.celebration-content {
+    text-align: center;
+    padding: var(--spacing-lg);
+    max-width: 450px;
+}
+
+.celebration-emoji {
+    font-size: 64px;
+    margin-bottom: var(--spacing-md);
+}
+
+/* 智慧推薦卡片 */
+.btn-recommend-card {
+    width: 100%;
+    background: #FFFFFF;
+    border: 3px dashed var(--primary-color);
+    border-radius: 20px;
+    padding: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.02);
+}
+
+.rec-emoji { font-size: 36px; }
+.rec-title { font-size: 18px; font-weight: bold; color: var(--text-color); text-align: left; }
+
+/* 實用工具：隱藏元件 */
+.hidden { display: none !important; }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounceIn {
+    from { opacity: 0; transform: scale(0.3); }
+    to { opacity: 1; transform: scale(1); }
+}
+/* 尋寶功能：動態長出來的寶藏小圖示 */
+.quiz-treasure-icon {
+    display: inline-block;
+    font-size: 1.3em;
+    margin: 0 4px;
+    animation: treasureFloat 1.2s infinite ease-in-out;
+    vertical-align: middle;
+}
+
+/* 讓寶藏有上下微微浮動的動態感，吸引孩子視覺聚焦 */
+@keyframes treasureFloat {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-6px) scale(1.1); }
+    100% { transform: translateY(0); }
+}
