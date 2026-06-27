@@ -159,6 +159,7 @@ body {
     display: inline-block;
     margin-bottom: 0.3em; /* 模擬斷詞微空格 */
     position: relative;
+	text-indent: initial;
 }
 .zhuyin {
     position: absolute;
@@ -457,6 +458,7 @@ ruby {
 p.reader-paragraph {
     font-size: 2em;
     margin-right: 2em;
+	text-indent: 2em;
 }
 
 main.reader-theatre {
