@@ -440,7 +440,7 @@ ruby rt {
 	-moz-osx-font-smoothing: grayscale;
 	width: 1.5em;
 	position: absolute;
-    right: -0.6em;
+    right: -1.1em;
 }
 
 ruby {
@@ -451,6 +451,7 @@ ruby {
 	min-height: 1em;
 	writing-mode: horizontal-tb;
     cursor: vertical-text;
+	position: relative;
 }
 
 p.reader-paragraph {
