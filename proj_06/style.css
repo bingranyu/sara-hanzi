@@ -455,6 +455,7 @@ ruby {
 
 p.reader-paragraph {
     font-size: 2em;
+    margin-right: 2em;
 }
 
 main.reader-theatre {
